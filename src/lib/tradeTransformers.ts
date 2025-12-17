@@ -66,6 +66,11 @@ export function transformTrade(backendTrade: BackendTrade | any, index: number =
     };
   }
 
+  if (index === 0) {
+    console.log('First trade structure - Available fields:', Object.keys(backendTrade));
+    console.log('First trade full data:', JSON.stringify(backendTrade, null, 2));
+  }
+
   const direction = (backendTrade.direction === 'BUY' || backendTrade.direction === 'RISE') ? 'RISE' : 'FALL';
   const time = backendTrade.time || backendTrade.timestamp || new Date().toISOString();
   

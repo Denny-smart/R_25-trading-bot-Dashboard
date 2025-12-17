@@ -46,20 +46,28 @@ export function transformBotStatus(backendStatus: BackendBotStatus | any): Front
     };
   }
 
+  // Log all available fields for debugging
+  console.log('All available fields in bot status:', Object.keys(backendStatus));
+  console.log('Full bot status object:', JSON.stringify(backendStatus, null, 2));
+
   // Handle different possible field names from backend
   const uptime = backendStatus.uptime_seconds ?? backendStatus.uptime ?? 0;
-  const profit = backendStatus.pnl ?? backendStatus.profit ?? 0;
+  const profit = backendStatus.pnl ?? backendStatus.profit ?? backendStatus.total_pnl ?? 0;
   const profitPercent = backendStatus.pnl_percent ?? backendStatus.profit_percent ?? 0;
+  const tradesCount = backendStatus.trades_today ?? backendStatus.total_trades ?? 0;
+  const accountBalance = backendStatus.balance ?? backendStatus.account_balance ?? 0;
+  const activePos = backendStatus.active_positions ?? backendStatus.open_positions ?? 0;
+  const rate = backendStatus.win_rate ?? backendStatus.winrate ?? 0;
 
   const transformed: FrontendBotStatus = {
     status: backendStatus.status || 'stopped',
     uptime: Number(uptime) || 0,
-    trades_today: Number(backendStatus.trades_today) || 0,
-    balance: Number(backendStatus.balance) || 0,
+    trades_today: Number(tradesCount) || 0,
+    balance: Number(accountBalance) || 0,
     profit: Number(profit) || 0,
     profit_percent: Number(profitPercent) || 0,
-    active_positions: Number(backendStatus.active_positions) || 0,
-    win_rate: Number(backendStatus.win_rate) || 0,
+    active_positions: Number(activePos) || 0,
+    win_rate: Number(rate) || 0,
   };
 
   console.log('Bot Status Transformation:', { input: backendStatus, output: transformed });
