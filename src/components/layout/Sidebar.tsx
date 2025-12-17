@@ -11,7 +11,8 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useMediaQuery } from '@/hooks/use-mobile';
 
 const navItems = [
   { path: '/', icon: LayoutDashboard, label: 'Dashboard' },
@@ -23,13 +24,14 @@ const navItems = [
 
 export function Sidebar() {
   const location = useLocation();
-  const [collapsed, setCollapsed] = useState(false);
+  const isMobile = useMediaQuery('(max-width: 1024px)');
+  const [collapsed, setCollapsed] = useState(isMobile);
 
   return (
     <aside
       className={cn(
-        'fixed left-0 top-0 z-40 h-screen bg-sidebar border-r border-sidebar-border transition-all duration-300',
-        collapsed ? 'w-16' : 'w-64'
+        'h-screen bg-sidebar border-r border-sidebar-border transition-all duration-300',
+        collapsed ? 'w-20' : 'w-64'
       )}
     >
       <div className="flex h-full flex-col">

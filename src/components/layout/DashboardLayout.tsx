@@ -13,21 +13,26 @@ export function DashboardLayout({ children, title }: DashboardLayoutProps) {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Mobile overlay */}
-      {sidebarOpen && (
-        <div
-          className="fixed inset-0 z-30 bg-background/80 backdrop-blur-sm lg:hidden"
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
-
-      {/* Sidebar */}
+      {/* Sidebar - hidden on mobile, fixed on desktop */}
       <div className={cn(
-        'fixed inset-y-0 left-0 z-40 transform transition-transform duration-300 lg:translate-x-0',
-        sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+        'hidden lg:fixed lg:inset-y-0 lg:left-0 lg:z-40 lg:transform lg:transition-transform lg:duration-300 lg:block',
+        sidebarOpen ? 'lg:translate-x-0' : 'lg:translate-x-0'
       )}>
         <Sidebar />
       </div>
+
+      {/* Mobile Sidebar - overlay only */}
+      {sidebarOpen && (
+        <>
+          <div
+            className="fixed inset-0 z-30 bg-background/80 backdrop-blur-sm lg:hidden"
+            onClick={() => setSidebarOpen(false)}
+          />
+          <div className="fixed inset-y-0 left-0 z-40 w-64 lg:hidden">
+            <Sidebar />
+          </div>
+        </>
+      )}
 
       {/* Main content */}
       <div className="lg:pl-64 min-h-screen flex flex-col">
