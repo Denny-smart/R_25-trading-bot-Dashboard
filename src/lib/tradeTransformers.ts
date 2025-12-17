@@ -52,34 +52,55 @@ export interface FrontendTradeStats {
 /**
  * Transforms a single backend trade to frontend format
  */
-export function transformTrade(backendTrade: BackendTrade, index: number = 0): FrontendTrade {
-  const direction = backendTrade.direction === 'BUY' ? 'RISE' : 'FALL';
-  const time = backendTrade.time || new Date().toISOString();
+export function transformTrade(backendTrade: BackendTrade | any, index: number = 0): FrontendTrade {
+  // Ensure we have valid trade data
+  if (!backendTrade || typeof backendTrade !== 'object') {
+    console.warn('Invalid trade data received:', backendTrade);
+    return {
+      id: `unknown-${index}`,
+      time: new Date().toISOString(),
+      direction: 'RISE',
+      entry_price: 0,
+      stake: 0,
+      status: 'open',
+    };
+  }
+
+  const direction = (backendTrade.direction === 'BUY' || backendTrade.direction === 'RISE') ? 'RISE' : 'FALL';
+  const time = backendTrade.time || backendTrade.timestamp || new Date().toISOString();
   
   // Determine status based on pnl for history trades
   let status: 'open' | 'win' | 'loss' | 'closed' = backendTrade.status as any;
-  if (backendTrade.pnl !== null && backendTrade.status === 'open') {
+  if (backendTrade.pnl !== null && backendTrade.pnl !== undefined && backendTrade.status === 'open') {
     status = backendTrade.pnl > 0 ? 'win' : backendTrade.pnl < 0 ? 'loss' : 'closed';
   }
 
-  return {
-    id: backendTrade.contract_id,
+  const transformed: FrontendTrade = {
+    id: backendTrade.contract_id || backendTrade.id || `trade-${index}`,
     time,
     direction,
-    entry_price: backendTrade.entry_price,
-    exit_price: backendTrade.exit_price,
-    stake: backendTrade.stake,
-    profit: backendTrade.pnl || undefined,
-    profit_percent: backendTrade.pnl ? (backendTrade.pnl / backendTrade.stake) * 100 : undefined,
-    duration: undefined, // Backend doesn't provide this yet
+    entry_price: Number(backendTrade.entry_price) || 0,
+    exit_price: backendTrade.exit_price ? Number(backendTrade.exit_price) : undefined,
+    stake: Number(backendTrade.stake) || 0,
+    profit: backendTrade.pnl !== null && backendTrade.pnl !== undefined ? Number(backendTrade.pnl) : undefined,
+    profit_percent: backendTrade.pnl ? (Number(backendTrade.pnl) / Number(backendTrade.stake)) * 100 : undefined,
+    duration: undefined,
     status,
   };
+
+  return transformed;
 }
 
 /**
  * Transforms backend trades array to frontend format
  */
-export function transformTrades(backendTrades: BackendTrade[]): FrontendTrade[] {
+export function transformTrades(backendTrades: (BackendTrade | any)[] | any): FrontendTrade[] {
+  // Handle case where backendTrades is not an array
+  if (!Array.isArray(backendTrades)) {
+    console.warn('Expected array of trades, got:', typeof backendTrades);
+    return [];
+  }
+
   return backendTrades.map((trade, index) => transformTrade(trade, index));
 }
 

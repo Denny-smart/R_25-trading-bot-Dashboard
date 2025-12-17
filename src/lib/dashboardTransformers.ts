@@ -30,22 +30,40 @@ export interface FrontendBotStatus {
 /**
  * Transforms backend bot status to frontend format
  */
-export function transformBotStatus(backendStatus: BackendBotStatus): FrontendBotStatus {
-  // Handle different possible field names from backend
-  const uptime = backendStatus.uptime_seconds || backendStatus.uptime || 0;
-  const profit = backendStatus.pnl || backendStatus.profit || 0;
-  const profitPercent = backendStatus.pnl_percent || backendStatus.profit_percent || 0;
+export function transformBotStatus(backendStatus: BackendBotStatus | any): FrontendBotStatus {
+  // Ensure we have valid data to work with
+  if (!backendStatus || typeof backendStatus !== 'object') {
+    console.warn('Invalid bot status data received:', backendStatus);
+    return {
+      status: 'stopped',
+      uptime: 0,
+      trades_today: 0,
+      balance: 0,
+      profit: 0,
+      profit_percent: 0,
+      active_positions: 0,
+      win_rate: 0,
+    };
+  }
 
-  return {
+  // Handle different possible field names from backend
+  const uptime = backendStatus.uptime_seconds ?? backendStatus.uptime ?? 0;
+  const profit = backendStatus.pnl ?? backendStatus.profit ?? 0;
+  const profitPercent = backendStatus.pnl_percent ?? backendStatus.profit_percent ?? 0;
+
+  const transformed: FrontendBotStatus = {
     status: backendStatus.status || 'stopped',
-    uptime,
-    trades_today: backendStatus.trades_today || 0,
-    balance: backendStatus.balance || 0,
-    profit,
-    profit_percent: profitPercent,
-    active_positions: backendStatus.active_positions || 0,
-    win_rate: backendStatus.win_rate || 0,
+    uptime: Number(uptime) || 0,
+    trades_today: Number(backendStatus.trades_today) || 0,
+    balance: Number(backendStatus.balance) || 0,
+    profit: Number(profit) || 0,
+    profit_percent: Number(profitPercent) || 0,
+    active_positions: Number(backendStatus.active_positions) || 0,
+    win_rate: Number(backendStatus.win_rate) || 0,
   };
+
+  console.log('Bot Status Transformation:', { input: backendStatus, output: transformed });
+  return transformed;
 }
 
 /**

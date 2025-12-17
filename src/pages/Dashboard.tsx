@@ -69,18 +69,40 @@ export default function Dashboard() {
 
   const fetchData = async () => {
     try {
+      console.log('Fetching dashboard data...');
       const [statusRes, tradesRes, statsRes] = await Promise.all([
         api.bot.status(),
         api.trades.active(),
         api.trades.stats(),
       ]);
 
-      // Transform bot status
-      const transformedStatus = transformBotStatus(statusRes.data);
+      console.log('Bot Status Response:', statusRes.data);
+      console.log('Trades Response:', tradesRes.data);
+      console.log('Stats Response:', statsRes.data);
+
+      // Transform bot status - handle different response structures
+      let botStatusData = statusRes.data;
+      if (!botStatusData || typeof botStatusData !== 'object') {
+        console.warn('Invalid bot status data, using defaults');
+        botStatusData = {
+          status: 'stopped',
+          uptime: 0,
+          trades_today: 0,
+          balance: 0,
+          profit: 0,
+          profit_percent: 0,
+          active_positions: 0,
+          win_rate: 0,
+        };
+      }
+
+      const transformedStatus = transformBotStatus(botStatusData);
+      console.log('Transformed Status:', transformedStatus);
       setBotStatus(transformedStatus);
       
       // Transform active trades to frontend format
-      const activeTrades = transformTrades(tradesRes.data || []);
+      const tradesArray = Array.isArray(tradesRes.data) ? tradesRes.data : [];
+      const activeTrades = transformTrades(tradesArray);
       setTrades(activeTrades.slice(0, 10));
 
       // Generate profit chart data based on actual profit
