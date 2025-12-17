@@ -4,6 +4,7 @@ import { StatsCard } from '@/components/dashboard/StatsCard';
 import { BotControl } from '@/components/dashboard/BotControl';
 import { RecentTrades } from '@/components/dashboard/RecentTrades';
 import { ProfitChart } from '@/components/dashboard/ProfitChart';
+import { Button } from '@/components/ui/button';
 import {
   Activity,
   Wallet,
@@ -11,6 +12,7 @@ import {
   BarChart3,
   Zap,
   Percent,
+  RefreshCw,
 } from 'lucide-react';
 import { api } from '@/services/api';
 import { wsService } from '@/services/websocket';
@@ -71,19 +73,29 @@ export default function Dashboard() {
   const fetchData = async () => {
     try {
       setError(null);
-      console.log('Fetching dashboard data...');
-      const [statusRes, tradesRes, statsRes] = await Promise.all([
-        api.bot.status(),
-        api.trades.active(),
-        api.trades.stats(),
-      ]);
+      console.log('=== DASHBOARD FETCH START ===');
+      console.log('API Base URL:', import.meta.env.VITE_API_URL);
+      
+      // Test individual endpoints
+      console.log('1. Fetching bot status...');
+      const statusRes = await api.bot.status();
+      console.log('   Response:', statusRes);
+      console.log('   Data:', statusRes.data);
 
-      console.log('Bot Status Response:', statusRes.data);
-      console.log('Trades Response:', tradesRes.data);
-      console.log('Stats Response:', statsRes.data);
+      console.log('2. Fetching active trades...');
+      const tradesRes = await api.trades.active();
+      console.log('   Response:', tradesRes);
+      console.log('   Data:', tradesRes.data);
+
+      console.log('3. Fetching stats...');
+      const statsRes = await api.trades.stats();
+      console.log('   Response:', statsRes);
+      console.log('   Data:', statsRes.data);
 
       // Transform bot status - handle different response structures
       let botStatusData = statusRes.data;
+      console.log('4. Bot status raw data:', botStatusData);
+      
       if (!botStatusData || typeof botStatusData !== 'object') {
         console.warn('Invalid bot status data, using defaults');
         botStatusData = {
@@ -99,12 +111,16 @@ export default function Dashboard() {
       }
 
       const transformedStatus = transformBotStatus(botStatusData);
-      console.log('Transformed Status:', transformedStatus);
+      console.log('5. Transformed bot status:', transformedStatus);
       setBotStatus(transformedStatus);
       
       // Transform active trades to frontend format
       const tradesArray = Array.isArray(tradesRes.data) ? tradesRes.data : [];
+      console.log('6. Trades array:', tradesArray);
+      
       const activeTrades = transformTrades(tradesArray);
+      console.log('7. Transformed trades:', activeTrades);
+      
       setTrades(activeTrades.slice(0, 10));
 
       // Generate profit chart data based on actual profit
@@ -112,11 +128,18 @@ export default function Dashboard() {
         transformedStatus.profit,
         transformedStatus.trades_today
       );
+      console.log('8. Chart data:', chartData);
       setProfitData(chartData);
+      
+      console.log('=== DASHBOARD FETCH SUCCESS ===');
     } catch (error: any) {
       const errorMsg = error?.message || 'Unknown error occurred';
-      console.error('Failed to fetch data:', error);
-      setError(errorMsg);
+      console.error('=== DASHBOARD FETCH ERROR ===');
+      console.error('Full error:', error);
+      console.error('Error message:', errorMsg);
+      console.error('Error response:', error?.response);
+      console.error('Error response data:', error?.response?.data);
+      setError(`${errorMsg} - Check console for details`);
     } finally {
       setIsLoading(false);
     }
@@ -185,12 +208,25 @@ export default function Dashboard() {
   return (
     <DashboardLayout title="Dashboard">
       <div className="space-y-6">
-        {error && (
-          <div className="p-4 bg-destructive/10 border border-destructive rounded-lg">
-            <p className="text-destructive text-sm font-medium">Error: {error}</p>
-            <p className="text-destructive/70 text-xs mt-2">Check console for more details</p>
+        <div className="flex justify-between items-start gap-4">
+          <div className="flex-1">
+            {error && (
+              <div className="p-4 bg-destructive/10 border border-destructive rounded-lg">
+                <p className="text-destructive text-sm font-medium">Error: {error}</p>
+                <p className="text-destructive/70 text-xs mt-2">Open console (F12) to see detailed logs</p>
+              </div>
+            )}
           </div>
-        )}
+          <Button 
+            onClick={fetchData}
+            variant="outline"
+            size="sm"
+            className="gap-2"
+          >
+            <RefreshCw className="w-4 h-4" />
+            Refresh
+          </Button>
+        </div>
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
           <StatsCard
