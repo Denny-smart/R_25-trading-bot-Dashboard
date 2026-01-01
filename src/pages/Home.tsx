@@ -151,8 +151,8 @@ const coreFeatures = [
 const apiFeatures = [
   {
     icon: Globe,
-    title: 'REST API',
-    description: 'Full bot control through a comprehensive RESTful API interface.',
+    title: 'FastAPI Backend',
+    description: 'High-performance Python backend built with FastAPI for lightning-fast API responses.',
   },
   {
     icon: Radio,
@@ -286,7 +286,7 @@ export default function Home() {
                 transitionDelay: '200ms'
               }}
             >
-              An intelligent automated trading bot that analyzes markets in real time, 
+              A high-performance automated trading bot powered by FastAPI. Analyzes markets in real time, 
               manages risk with precision, and executes trades based on advanced technical indicators.
             </p>
 
