@@ -35,10 +35,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (!session) {
           setIsApproved(null);
           setRole(null);
-        }
-
-        // Defer approval check with setTimeout to avoid deadlock
-        if (session?.user) {
+          setIsLoading(false); // Immediately set loading to false on logout
+        } else {
+          // Defer approval check with setTimeout to avoid deadlock
           setTimeout(() => {
             checkApprovalStatus();
           }, 0);
