@@ -67,6 +67,7 @@ create policy "Profiles visible to owner and admins"
   );
 
 -- 70. UPDATE Policy (Combined: Admin OR Owner)
+drop policy if exists "Admins or owners can update profile" on public.profiles;
 create policy "Admins or owners can update profile"
   on public.profiles
   for update
@@ -76,3 +77,9 @@ create policy "Admins or owners can update profile"
     (select public.is_admin())
   );
 
+-- 80. INSERT Policy (Users can insert own profile)
+drop policy if exists "Users can insert their own profile" on public.profiles;
+create policy "Users can insert their own profile"
+  on public.profiles
+  for insert
+  with check ( (select auth.uid()) = id );
