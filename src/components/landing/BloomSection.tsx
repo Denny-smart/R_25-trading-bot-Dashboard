@@ -30,7 +30,7 @@ export function BloomSection({ children, className = "", title, subtitle, dark =
                             </h2>
                         )}
                         {subtitle && (
-                            <p className={`text-xl md:text-2xl ${dark ? 'text-bloom-purple/80' : 'text-slate-600'}`}>
+                            <p className={`text-xl md:text-2xl font-medium ${dark ? 'text-bloom-purple' : 'text-violet-200'}`}>
                                 {subtitle}
                             </p>
                         )}

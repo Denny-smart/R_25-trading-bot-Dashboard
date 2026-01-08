@@ -30,7 +30,9 @@ export function BloomHero() {
                 </h1>
 
                 <p className="text-lg md:text-xl text-bloom-purple/80 mb-10 max-w-xl mx-auto leading-relaxed">
-                    Professional trading hub for Deriv Volatility Markets. Real-time monitoring, advanced analytics, and automated trading powered by Top Down market analysis.
+                    Automated trading for Deriv Volatility Markets.
+                    <br className="hidden md:block" />
+                    Powered by Top Down market analysis.
                 </p>
 
                 <div className="flex flex-wrap items-center justify-center gap-4">
