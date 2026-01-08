@@ -102,37 +102,37 @@ export default function Home() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="features">
           <BloomFeature
             title="Real-time Bot Monitoring"
-            description="Live status tracking with instant updates on bot performance, active positions, and market conditions."
+            description="Real-time tracking of performance and positions."
             variant="dark"
             icon={Activity}
           />
           <BloomFeature
             title="Trading Dashboard"
-            description="Comprehensive view of all active trades, positions, and pending orders. Monitor multiple volatility indices simultaneously."
+            description="Unified view of active trades and orders."
             variant="dark"
             icon={BarChart3}
           />
           <BloomFeature
             title="Trade History & Analytics"
-            description="Detailed historical data with advanced filtering, sorting, and visualization. Analyze performance across different timeframes."
+            description="Deep analysis with advanced filtering."
             variant="dark"
             icon={LineChart}
           />
           <BloomFeature
             title="Signal Monitoring"
-            description="Real-time trading signal visualization powered by Top Down analysis. See exactly when and why the bot enters positions."
+            description="Visualize entry points and strategy logic."
             variant="dark"
             icon={Target}
           />
           <BloomFeature
             title="Performance Metrics"
-            description="Track ROI, win rates, profit factor, maximum drawdown, and other critical statistics. Make data-driven decisions."
+            description="Track ROI, win rates, and drawdowns."
             variant="dark"
             icon={TrendingUp}
           />
           <BloomFeature
             title="Strategy Configuration"
-            description="Customize Top Down analysis parameters, risk settings, and trading preferences. Fine-tune your bot for optimal performance."
+            description="Customize strategy and risk settings."
             variant="dark"
             icon={Settings}
           />
@@ -143,10 +143,10 @@ export default function Home() {
       <BloomSection dark title="Enterprise-Grade Security" subtitle="Your trading data and credentials are protected with bank-level security protocols" className="relative group" id="security" withBackground>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mt-8">
           {[
-            { title: 'Google OAuth 2.0', desc: 'Secure authentication via Google. No passwords to remember, complete protection.' },
-            { title: 'Admin Approval Workflow', desc: 'Every new user is vetted and approved by administrators before gaining platform access.' },
-            { title: 'Role-Based Access', desc: 'Granular permissions system. Admin oversight on all critical operations.' },
-            { title: 'Protected Routes', desc: 'Automatic session management. Unauthenticated users are instantly redirected.' },
+            { title: 'Google OAuth 2.0', desc: 'Secure passwordless Google login.' },
+            { title: 'Admin Approval Workflow', desc: 'Strict admin approval for all users.' },
+            { title: 'Role-Based Access', desc: 'Granular admin controls.' },
+            { title: 'Protected Routes', desc: 'Secure session handling.' },
           ].map((item, i) => (
             <div key={i} className="bg-white/5 backdrop-blur-sm border border-white/10 p-8 rounded-3xl hover:bg-white/10 transition-colors">
               <div className="w-10 h-10 rounded-full bg-bloom-primary/20 flex items-center justify-center text-bloom-primary mb-6">
@@ -167,20 +167,20 @@ export default function Home() {
           <div className="bg-white/5 rounded-3xl p-8 border border-white/10 shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300 backdrop-blur-sm group">
             <div className="w-14 h-14 rounded-2xl bg-blue-500/20 text-blue-400 flex items-center justify-center text-2xl mb-6 border border-blue-500/30">📊</div>
             <h3 className="text-xl font-bold text-white mb-3">V10 & V25 Index</h3>
-            <p className="text-bloom-purple/70 leading-relaxed">Lower volatility indices perfect for conservative strategies. Ideal for learning and testing Top Down analysis with reduced risk.</p>
+            <p className="text-bloom-purple/70 leading-relaxed">Low volatility. Ideal for testing strategies.</p>
           </div>
           <div className="bg-bloom-primary/10 rounded-3xl p-8 shadow-xl hover:-translate-y-1 transition-all duration-300 text-white relative overflow-hidden border border-bloom-primary/20">
             <div className="absolute top-0 right-0 p-32 bg-bloom-primary/20 rounded-full blur-3xl -mr-16 -mt-16" />
             <div className="relative z-10">
               <div className="w-14 h-14 rounded-2xl bg-bloom-primary/20 text-bloom-primary flex items-center justify-center text-2xl mb-6">⚡</div>
               <h3 className="text-xl font-bold mb-3">V50 & V75 Index</h3>
-              <p className="text-bloom-purple/80 leading-relaxed">Medium volatility indices offering balanced risk-reward. Most popular among MaliBot users for consistent daily profits.</p>
+              <p className="text-bloom-purple/80 leading-relaxed">Balanced volatility. Best for daily profits.</p>
             </div>
           </div>
           <div className="bg-white/5 rounded-3xl p-8 border border-white/10 shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300 backdrop-blur-sm group">
             <div className="w-14 h-14 rounded-2xl bg-orange-500/20 text-orange-400 flex items-center justify-center text-2xl mb-6 border border-orange-500/30">🚀</div>
             <h3 className="text-xl font-bold text-white mb-3">V100 Index</h3>
-            <p className="text-bloom-purple/70 leading-relaxed">High volatility index for aggressive traders. Maximum profit potential with advanced Top Down strategy execution.</p>
+            <p className="text-bloom-purple/70 leading-relaxed">High volatility. Maximize profit potential.</p>
           </div>
         </div>
       </BloomSection>
@@ -204,7 +204,7 @@ export default function Home() {
           <div className="relative z-10">
             <h2 className="text-3xl md:text-5xl font-bold text-white mb-6">Ready to Start Trading?</h2>
             <p className="text-bloom-purple/80 text-lg md:text-xl max-w-2xl mx-auto mb-10">
-              Join professional traders using MaliBot Trading Hub. Request access today and start growing your capital.
+              Join professionals using MaliBot today.
             </p>
 
             <div className="flex flex-col items-center gap-4">

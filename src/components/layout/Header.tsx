@@ -1,4 +1,5 @@
-import { Bell, User, LogOut, Settings, Menu } from 'lucide-react';
+import { User, LogOut, Settings, Menu } from 'lucide-react';
+import { NotificationBell } from '@/components/dashboard/NotificationBell';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -41,10 +42,7 @@ export function Header({ title, onMenuClick }: HeaderProps) {
         </div>
 
         <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon" className="relative">
-            <Bell className="w-5 h-5 text-muted-foreground" />
-            <span className="absolute top-2 right-2 w-2 h-2 bg-primary rounded-full" />
-          </Button>
+          <NotificationBell />
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
