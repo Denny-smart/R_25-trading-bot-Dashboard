@@ -15,6 +15,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from '@/hooks/use-toast';
 import { Check, X, Shield, User as UserIcon, Loader2, Trash2 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface Profile {
     id: string;
@@ -183,8 +184,12 @@ export function AdminUserList() {
 
     if (isLoading && users.length === 0) {
         return (
-            <div className="flex justify-center p-8">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <div className="space-y-4">
+                {[1, 2, 3].map((i) => (
+                    <div key={i} className="flex items-center space-x-4">
+                        <Skeleton className="h-12 w-full" />
+                    </div>
+                ))}
             </div>
         );
     }
@@ -286,6 +291,93 @@ export function AdminUserList() {
         </Table>
     );
 
+    const UserCards = ({ data, showApprove = false }: { data: Profile[], showApprove?: boolean }) => (
+        <div className="space-y-4">
+            {data.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground border border-dashed rounded-lg p-8">
+                    No users found.
+                </div>
+            ) : (
+                data.map((user) => (
+                    <div key={user.id} className="bg-card border border-border rounded-lg p-4 space-y-4">
+                        <div className="flex justify-between items-start">
+                            <div className="flex flex-col">
+                                <span className="font-medium text-lg">{user.first_name} {user.last_name}</span>
+                                <span className="text-sm text-muted-foreground">{user.email || 'No email'}</span>
+                            </div>
+                            <Badge variant={user.role === 'admin' ? 'default' : 'secondary'}>
+                                {user.role}
+                            </Badge>
+                        </div>
+
+                        <div className="flex justify-between items-center text-sm">
+                            <span className="text-muted-foreground">Status:</span>
+                            {user.is_approved ? (
+                                <Badge variant="outline" className="text-green-600 border-green-600">Approved</Badge>
+                            ) : (
+                                <Badge variant="outline" className="text-yellow-600 border-yellow-600">Pending</Badge>
+                            )}
+                        </div>
+
+                        <div className="flex justify-between items-center text-sm">
+                            <span className="text-muted-foreground">Joined:</span>
+                            <span>{user.created_at && formatDistanceToNow(new Date(user.created_at), { addSuffix: true })}</span>
+                        </div>
+
+                        <div className="pt-2 border-t border-border flex justify-end gap-2">
+                            {showApprove && !user.is_approved && (
+                                <Button
+                                    size="sm"
+                                    onClick={() => handleApprove(user.id)}
+                                    disabled={processingId === user.id}
+                                    className="w-full"
+                                >
+                                    {processingId === user.id ? (
+                                        <Loader2 className="h-4 w-4 animate-spin" />
+                                    ) : (
+                                        <>
+                                            <Check className="h-4 w-4 mr-1" /> Approve
+                                        </>
+                                    )}
+                                </Button>
+                            )}
+                            {showApprove && user.is_approved && (
+                                <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="text-yellow-600 border-yellow-600 hover:text-yellow-700 hover:bg-yellow-50 flex-1"
+                                    onClick={() => handleRevoke(user.id)}
+                                    disabled={processingId === user.id}
+                                >
+                                    {processingId === user.id ? (
+                                        <Loader2 className="h-4 w-4 animate-spin" />
+                                    ) : (
+                                        <>
+                                            <X className="h-4 w-4 mr-1" /> Revoke
+                                        </>
+                                    )}
+                                </Button>
+                            )}
+                            <Button
+                                size="sm"
+                                variant="destructive"
+                                onClick={() => handleDelete(user.id)}
+                                disabled={processingId === user.id}
+                                className={showApprove ? "w-auto" : "w-full"}
+                            >
+                                {processingId === user.id ? (
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                    <Trash2 className="h-4 w-4" />
+                                )}
+                            </Button>
+                        </div>
+                    </div>
+                ))
+            )}
+        </div>
+    );
+
     return (
         <Card>
             <CardHeader>
@@ -309,11 +401,21 @@ export function AdminUserList() {
                     </TabsList>
 
                     <TabsContent value="pending">
-                        <UserTable data={pendingUsers} showApprove={true} />
+                        <div className="hidden md:block">
+                            <UserTable data={pendingUsers} showApprove={true} />
+                        </div>
+                        <div className="md:hidden">
+                            <UserCards data={pendingUsers} showApprove={true} />
+                        </div>
                     </TabsContent>
 
                     <TabsContent value="all">
-                        <UserTable data={approvedUsers.concat(pendingUsers)} />
+                        <div className="hidden md:block">
+                            <UserTable data={approvedUsers.concat(pendingUsers)} />
+                        </div>
+                        <div className="md:hidden">
+                            <UserCards data={approvedUsers.concat(pendingUsers)} />
+                        </div>
                     </TabsContent>
                 </Tabs>
             </CardContent>

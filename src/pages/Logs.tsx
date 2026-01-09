@@ -17,7 +17,9 @@ import { api } from '@/services/api';
 import { wsService } from '@/services/websocket';
 import { formatDate } from '@/lib/formatters';
 import { cn } from '@/lib/utils';
-import { Search, Download, Trash2, ArrowDown, RefreshCw } from 'lucide-react';
+import { Search, Download, Trash2, ArrowDown, RefreshCw, FileText } from 'lucide-react';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface LogEntry {
   id: string;
@@ -33,6 +35,7 @@ export default function Logs() {
   const [levelFilter, setLevelFilter] = useState<string>('all');
   const [autoScroll, setAutoScroll] = useState(true);
   const [autoRefresh, setAutoRefresh] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -44,7 +47,7 @@ export default function Logs() {
     });
 
     return () => {
-      wsService.off('log_message', () => {});
+      wsService.off('log_message', () => { });
     };
   }, []);
 
@@ -99,8 +102,11 @@ export default function Logs() {
         typeof log === 'string' ? parseLogString(log, index) : log
       );
       setLogs(parsedLogs);
+      setLogs(parsedLogs);
     } catch (error) {
       console.error('Failed to fetch logs:', error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -225,8 +231,20 @@ export default function Logs() {
 
           <ScrollArea className="h-[400px] sm:h-[500px] md:h-[600px] rounded-lg bg-background/50 border border-border" ref={scrollAreaRef}>
             <div className="p-2 sm:p-4 space-y-1 sm:space-y-2 font-mono text-xs sm:text-sm">
-              {filteredLogs.length === 0 ? (
-                <p className="text-center text-muted-foreground py-8">No logs found</p>
+              {isLoading ? (
+                <div className="space-y-2">
+                  {[1, 2, 3, 4, 5, 6].map((i) => (
+                    <Skeleton key={i} className="h-8 w-full" />
+                  ))}
+                </div>
+              ) : filteredLogs.length === 0 ? (
+                <EmptyState
+                  icon={FileText}
+                  title="No Logs Available"
+                  description="System logs will appear here once the bot is active."
+                  className="border-none bg-transparent"
+                  variant="small"
+                />
               ) : (
                 filteredLogs.map((log, index) => (
                   <div

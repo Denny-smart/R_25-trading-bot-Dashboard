@@ -67,19 +67,21 @@ export function ProfitChart({ data }: ProfitChartProps) {
                 content={({ active, payload }) => {
                   if (active && payload && payload.length) {
                     return (
-                      <div className="bg-popover border border-border rounded-lg p-3 shadow-lg">
-                        <p className="text-xs text-muted-foreground">
+                      <div className="bg-popover border border-border rounded-lg p-3 shadow-lg min-w-[150px]">
+                        <p className="text-xs text-muted-foreground mb-1">
                           {payload[0].payload.time}
                         </p>
-                        <p
-                          className={`font-semibold font-mono ${
-                            payload[0].value && Number(payload[0].value) >= 0
-                              ? 'text-success'
-                              : 'text-destructive'
-                          }`}
-                        >
-                          {formatCurrency(Number(payload[0].value) || 0)}
-                        </p>
+                        <div className="flex items-center justify-between gap-4">
+                          <span className="text-xs font-medium">Profit:</span>
+                          <span
+                            className={`font-mono font-bold ${payload[0].value && Number(payload[0].value) >= 0
+                                ? 'text-success'
+                                : 'text-destructive'
+                              }`}
+                          >
+                            {formatCurrency(Number(payload[0].value) || 0)}
+                          </span>
+                        </div>
                       </div>
                     );
                   }

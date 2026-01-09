@@ -1,4 +1,8 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { ClipboardList, History, ArrowRight } from 'lucide-react';
+import { Card } from '@/components/ui/card';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
@@ -187,32 +191,71 @@ export default function Trades() {
           <div className="stat-card overflow-hidden">
             <h3 className="font-semibold text-foreground mb-4">Open Positions</h3>
             <ScrollArea className="h-[500px]">
-              <table className="data-table">
-                <thead>
-                  <tr>
-                    <th>Trade ID</th>
-                    <th>Time Opened</th>
-                    <th>Direction</th>
-                    <th>Entry Price</th>
-                    <th>Current Price</th>
-                    <th>Stake</th>
-                    <th>Unrealized P/L</th>
-                    <th>Duration</th>
-                    <th>Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {activeTrades.length === 0 ? (
-                    <tr>
-                      <td colSpan={9} className="text-center py-8 text-muted-foreground">
-                        No active trades
-                      </td>
-                    </tr>
-                  ) : (
-                    activeTrades.map((trade) => <TradeRow key={trade.id} trade={trade} />)
-                  )}
-                </tbody>
-              </table>
+              {activeTrades.length === 0 ? (
+                <EmptyState
+                  icon={ClipboardList}
+                  title="No Active Trades"
+                  description="The bot is currently waiting for market opportunities."
+                  className="border-none bg-transparent"
+                />
+              ) : (
+                <>
+                  <div className="hidden md:block">
+                    <table className="data-table">
+                      <thead>
+                        <tr>
+                          <th>Trade ID</th>
+                          <th>Time Opened</th>
+                          <th>Direction</th>
+                          <th>Entry Price</th>
+                          <th>Current Price</th>
+                          <th>Stake</th>
+                          <th>Unrealized P/L</th>
+                          <th>Duration</th>
+                          <th>Status</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {activeTrades.map((trade) => <TradeRow key={trade.id} trade={trade} />)}
+                      </tbody>
+                    </table>
+                  </div>
+                  <div className="md:hidden space-y-4">
+                    {activeTrades.map((trade) => (
+                      <Card key={trade.id} className="p-4 bg-card border-border">
+                        <div className="flex justify-between items-start mb-3">
+                          <div>
+                            <span className="font-mono text-xs text-muted-foreground">#{trade.id}</span>
+                            <div className="text-sm font-medium mt-1">{formatDate(trade.time)}</div>
+                          </div>
+                          <Badge className={cn('text-xs', trade.direction === 'RISE' ? 'badge-rise' : 'badge-fall')}>
+                            {trade.direction === 'RISE' ? <ArrowUp className="w-3 h-3 mr-1" /> : <ArrowDown className="w-3 h-3 mr-1" />}
+                            {trade.direction}
+                          </Badge>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4 text-sm mb-3">
+                          <div>
+                            <div className="text-muted-foreground text-xs">Entry</div>
+                            <div className="font-mono">{formatCurrency(trade.entry_price)}</div>
+                          </div>
+                          <div className="text-right">
+                            <div className="text-muted-foreground text-xs">Stake</div>
+                            <div className="font-mono">{formatCurrency(trade.stake)}</div>
+                          </div>
+                        </div>
+                        <div className="pt-3 border-t border-border flex justify-between items-center">
+                          <span className="text-xs text-muted-foreground">Unrealized P/L</span>
+                          {trade.profit !== undefined ? (
+                            <span className={cn('font-mono font-bold', trade.profit >= 0 ? 'profit-positive' : 'profit-negative')}>
+                              {trade.profit >= 0 ? '+' : ''}{formatCurrency(trade.profit)}
+                            </span>
+                          ) : '-'}
+                        </div>
+                      </Card>
+                    ))}
+                  </div>
+                </>
+              )}
             </ScrollArea>
           </div>
         </TabsContent>
@@ -258,32 +301,90 @@ export default function Trades() {
 
           <div className="stat-card overflow-hidden">
             <ScrollArea className="h-[500px]">
-              <table className="data-table">
-                <thead>
-                  <tr>
-                    <th>Trade ID</th>
-                    <th>Date/Time</th>
-                    <th>Direction</th>
-                    <th>Entry Price</th>
-                    <th>Exit Price</th>
-                    <th>Stake</th>
-                    <th>Profit/Loss</th>
-                    <th>Duration</th>
-                    <th>Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredHistory.length === 0 ? (
-                    <tr>
-                      <td colSpan={9} className="text-center py-8 text-muted-foreground">
-                        No trades found
-                      </td>
-                    </tr>
-                  ) : (
-                    filteredHistory.map((trade) => <TradeRow key={trade.id} trade={trade} />)
-                  )}
-                </tbody>
-              </table>
+              {filteredHistory.length === 0 ? (
+                <EmptyState
+                  icon={History}
+                  title="No Trade History"
+                  description="Configure the bot to start trading and generate history."
+                  action={{
+                    label: "Configure Bot to Start",
+                    onClick: () => window.location.href = '/dashboard' // or use navigate
+                  }}
+                  className="border-none bg-transparent"
+                />
+              ) : (
+                <>
+                  <div className="hidden md:block">
+                    <table className="data-table">
+                      <thead>
+                        <tr>
+                          <th>Trade ID</th>
+                          <th>Date/Time</th>
+                          <th>Direction</th>
+                          <th>Entry Price</th>
+                          <th>Exit Price</th>
+                          <th>Stake</th>
+                          <th>Profit/Loss</th>
+                          <th>Duration</th>
+                          <th>Status</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filteredHistory.map((trade) => <TradeRow key={trade.id} trade={trade} />)}
+                      </tbody>
+                    </table>
+                  </div>
+                  <div className="md:hidden space-y-4">
+                    {filteredHistory.map((trade) => (
+                      <Card key={trade.id} className="p-4 bg-card border-border">
+                        <div className="flex justify-between items-start mb-3">
+                          <div>
+                            <span className="font-mono text-xs text-muted-foreground">#{trade.id}</span>
+                            <div className="text-sm font-medium mt-1">{formatDate(trade.time)}</div>
+                          </div>
+                          <Badge
+                            variant="outline"
+                            className={cn(
+                              'text-xs',
+                              trade.status === 'win' && 'border-success text-success',
+                              trade.status === 'loss' && 'border-destructive text-destructive',
+                              trade.status === 'open' && 'border-primary text-primary'
+                            )}
+                          >
+                            {trade.status.toUpperCase()}
+                          </Badge>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2 text-sm mb-3">
+                          <div className="flex items-center gap-1 col-span-2 mb-1">
+                            <Badge className={cn('text-[10px] h-5 px-1.5', trade.direction === 'RISE' ? 'badge-rise' : 'badge-fall')}>
+                              {trade.direction === 'RISE' ? <ArrowUp className="w-3 h-3 mr-1" /> : <ArrowDown className="w-3 h-3 mr-1" />}
+                              {trade.direction}
+                            </Badge>
+                          </div>
+                          <div>
+                            <div className="text-muted-foreground text-xs">Entry</div>
+                            <div className="font-mono">{formatCurrency(trade.entry_price)}</div>
+                          </div>
+                          <div className="text-right">
+                            <div className="text-muted-foreground text-xs">Exit</div>
+                            <div className="font-mono">{trade.exit_price ? formatCurrency(trade.exit_price) : '-'}</div>
+                          </div>
+                        </div>
+                        <div className="pt-3 border-t border-border flex justify-between items-center">
+                          <div className="text-xs text-muted-foreground">
+                            Stake: {formatCurrency(trade.stake)}
+                          </div>
+                          {trade.profit !== undefined ? (
+                            <span className={cn('font-mono font-bold text-base', trade.profit >= 0 ? 'profit-positive' : 'profit-negative')}>
+                              {trade.profit >= 0 ? '+' : ''}{formatCurrency(trade.profit)}
+                            </span>
+                          ) : '-'}
+                        </div>
+                      </Card>
+                    ))}
+                  </div>
+                </>
+              )}
             </ScrollArea>
           </div>
         </TabsContent>

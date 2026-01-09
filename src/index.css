@@ -164,7 +164,15 @@
 
 @layer utilities {
   .animate-glow {
-    animation: glow 2s ease-in-out infinite alternate;
+    animation: glow 3s ease-in-out infinite alternate;
+  }
+
+  .animate-float-slow {
+    animation: float 8s ease-in-out infinite;
+  }
+
+  .animate-float-delayed {
+    animation: float 8s ease-in-out infinite 4s;
   }
 
   @keyframes glow {
@@ -233,14 +241,47 @@
   }
 
   @keyframes float {
-
     0%,
     100% {
-      transform: perspective(1000px) rotateX(5deg) translateY(0px);
+      transform: translateY(0px);
     }
-
     50% {
-      transform: perspective(1000px) rotateX(5deg) translateY(-10px);
+      transform: translateY(-10px);
     }
+  }
+
+  .typewriter {
+    overflow: hidden;
+    white-space: nowrap;
+    animation: typing 3.5s steps(40, end);
+  }
+
+  @keyframes typing {
+    from { width: 0 }
+    to { width: 100% }
+  }
+
+  /* Custom Scrollbar for Cards */
+  .card-scroll::-webkit-scrollbar {
+    width: 4px;
+  }
+  
+  .card-scroll::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  
+  .card-scroll::-webkit-scrollbar-thumb {
+    background: hsl(var(--border));
+    border-radius: 4px;
+  }
+}
+
+@layer components {
+  .hover-lift {
+    @apply transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:shadow-primary/10;
+  }
+  
+  .hover-glow {
+    @apply transition-all duration-300 hover:shadow-[0_0_20px_rgba(124,58,237,0.3)];
   }
 }

@@ -12,7 +12,7 @@ export function BloomHero() {
                 <img
                     src="/hero-bg.png"
                     alt="Blooming flowers and coins"
-                    className="w-full h-full object-cover object-center opacity-40 mix-blend-luminosity hover:mix-blend-normal transition-all duration-1000"
+                    className="w-full h-full object-cover object-center opacity-40 mix-blend-luminosity hover:mix-blend-normal transition-all duration-1000 animate-float-slow"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-bloom-dark via-bloom-dark/80 to-transparent" />
                 <div className="absolute inset-0 bg-gradient-to-r from-bloom-dark via-transparent to-bloom-dark" />
@@ -25,8 +25,8 @@ export function BloomHero() {
                     <span>Next Gen Trading Logic</span>
                 </div>
 
-                <h1 className="text-5xl md:text-7xl font-bold tracking-tight mb-6 text-white leading-[1.1]">
-                    Where Money <span className="text-bloom-primary">Grows</span>
+                <h1 className="text-5xl md:text-7xl font-bold tracking-tight mb-6 text-white leading-[1.1] animate-in slide-in-from-bottom-4 fade-in duration-1000">
+                    Where Money <span className="text-bloom-primary inline-block animate-pulse">Grows</span>
                 </h1>
 
                 <p className="text-lg md:text-xl text-bloom-purple/80 mb-10 max-w-xl mx-auto leading-relaxed">

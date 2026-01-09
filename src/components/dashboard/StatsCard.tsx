@@ -24,7 +24,7 @@ export function StatsCard({
   pulse = false,
 }: StatsCardProps) {
   return (
-    <div className="stat-card">
+    <div className="stat-card hover-lift hover-glow">
       <div className="flex items-start justify-between">
         <div className="flex-1">
           <p className="text-sm font-medium text-muted-foreground">{title}</p>

@@ -34,7 +34,11 @@ export default function Home() {
       {/* Navigation - Overlay on Hero */}
       <header className={`fixed top-0 z-50 w-full transition-all duration-300 ${scrolled ? 'bg-bloom-dark/80 backdrop-blur-md py-4' : 'bg-transparent py-6'}`}>
         <div className="container mx-auto flex items-center justify-between px-6">
-          <div className="flex items-center gap-3">
+          <Link
+            to="/"
+            className="flex items-center gap-3 hover:opacity-90 transition-opacity"
+            onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+          >
             <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-violet-400 to-violet-600 text-white shadow-lg shadow-violet-500/20">
               <Bot className="w-6 h-6" />
             </div>
@@ -42,7 +46,7 @@ export default function Home() {
               Mali<span className="text-violet-400">Bot</span>
               <span className="block text-[0.6rem] font-medium text-bloom-purple tracking-wider uppercase ml-0.5 -mt-1 opacity-80">Trading Hub</span>
             </span>
-          </div>
+          </Link>
 
           <nav className="hidden md:flex items-center gap-8">
             {['Features', 'Platform', 'Security'].map((item) => (
