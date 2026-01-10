@@ -306,10 +306,6 @@ export default function Trades() {
                   icon={History}
                   title="No Trade History"
                   description="Configure the bot to start trading and generate history."
-                  action={{
-                    label: "Configure Bot to Start",
-                    onClick: () => window.location.href = '/dashboard' // or use navigate
-                  }}
                   className="border-none bg-transparent"
                 />
               ) : (
