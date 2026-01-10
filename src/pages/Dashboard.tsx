@@ -42,6 +42,7 @@ export default function Dashboard() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [refreshInterval, setRefreshInterval] = useState<NodeJS.Timeout | null>(null);
+  const [hasApiKey, setHasApiKey] = useState(false);
   const { role } = useAuth();
 
   useEffect(() => {
@@ -85,6 +86,10 @@ export default function Dashboard() {
       // Also fetch trades for the recent trades widget
       const tradesRes = await api.trades.active();
       console.log('Active Trades Response:', tradesRes.data);
+
+      // Check for API key
+      const configRes = await api.config.current();
+      setHasApiKey(!!configRes.data?.deriv_api_key);
 
       const transformedStatus = transformBotStatus(statusRes.data);
       console.log('Transformed Status:', transformedStatus);
@@ -148,6 +153,32 @@ export default function Dashboard() {
     } catch (error: any) {
       toast({
         title: 'Failed to restart bot',
+        description: error.response?.data?.detail || 'An error occurred',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleUpdateApiKey = async (key: string) => {
+    try {
+      // Fetch current config first to preserve other settings
+      const currentConfigRes = await api.config.current();
+      const currentConfig = currentConfigRes.data || {};
+
+      // Update with new key
+      await api.config.update({
+        ...currentConfig,
+        deriv_api_key: key
+      });
+
+      toast({
+        title: 'API Key Updated',
+        description: 'Your Deriv API key has been securely saved.'
+      });
+      setHasApiKey(true);
+    } catch (error: any) {
+      toast({
+        title: 'Failed to update API Key',
         description: error.response?.data?.detail || 'An error occurred',
         variant: 'destructive',
       });
@@ -255,9 +286,11 @@ export default function Dashboard() {
         {/* Bot Control */}
         <BotControl
           status={botStatus?.status || 'stopped'}
+          hasApiKey={hasApiKey}
           onStart={handleStart}
           onStop={handleStop}
           onRestart={handleRestart}
+          onUpdateApiKey={handleUpdateApiKey}
         />
 
         {/* Charts and Trades */}
