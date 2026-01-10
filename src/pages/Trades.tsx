@@ -53,6 +53,7 @@ export default function Trades() {
   const [activeTrades, setActiveTrades] = useState<FrontendTrade[]>([]);
   const [historyTrades, setHistoryTrades] = useState<FrontendTrade[]>([]);
   const [stats, setStats] = useState<FrontendTradeStats | null>(null);
+  const [hasApiKey, setHasApiKey] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [directionFilter, setDirectionFilter] = useState<string>('all');
@@ -65,11 +66,14 @@ export default function Trades() {
   const fetchData = async () => {
     setIsLoading(true);
     try {
-      const [activeRes, historyRes, statsRes] = await Promise.all([
+      const [activeRes, historyRes, statsRes, configRes] = await Promise.all([
         api.trades.active(),
         api.trades.history(),
         api.trades.stats(),
+        api.config.current(),
       ]);
+
+      setHasApiKey(!!configRes.data?.deriv_api_key && configRes.data.deriv_api_key !== '');
 
       // Transform backend data to frontend format
       const activeTrades = transformTrades(activeRes.data || []);
@@ -305,7 +309,10 @@ export default function Trades() {
                 <EmptyState
                   icon={History}
                   title="No Trade History"
-                  description="Configure the bot to start trading and generate history."
+                  description={hasApiKey
+                    ? "Trade history will be available once trades are executed and closed."
+                    : "Configure the bot to start trading and generate history."
+                  }
                   className="border-none bg-transparent"
                 />
               ) : (
