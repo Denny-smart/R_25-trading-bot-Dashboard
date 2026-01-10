@@ -22,7 +22,13 @@ import { toast } from '@/hooks/use-toast';
 import { formatCurrency, formatDuration } from '@/lib/formatters';
 import { Skeleton } from '@/components/ui/skeleton';
 import { transformTrades, type FrontendTrade } from '@/lib/tradeTransformers';
-import { transformBotStatus, generateProfitChartData, type FrontendBotStatus } from '@/lib/dashboardTransformers';
+import {
+  transformBotStatus,
+  generateProfitChartData,
+  transformTradeStats,
+  type FrontendBotStatus,
+  type FrontendTradeStats
+} from '@/lib/dashboardTransformers';
 
 interface BotStatus {
   status: 'running' | 'stopped';
@@ -39,6 +45,7 @@ export default function Dashboard() {
   const [botStatus, setBotStatus] = useState<FrontendBotStatus | null>(null);
   const [trades, setTrades] = useState<FrontendTrade[]>([]);
   const [profitData, setProfitData] = useState<{ time: string; profit: number }[]>([]);
+  const [tradeStats, setTradeStats] = useState<FrontendTradeStats | null>(null); // New state for overall stats
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [refreshInterval, setRefreshInterval] = useState<NodeJS.Timeout | null>(null);
@@ -99,6 +106,7 @@ export default function Dashboard() {
         });
         setTrades([]);
         setProfitData([]);
+        setTradeStats(null); // Reset stats too
         setIsLoading(false);
         return; // Stop here, do not fetch other data
       }
@@ -127,6 +135,16 @@ export default function Dashboard() {
         console.warn("Failed to fetch trades:", tradeError);
       }
 
+      // 4. Fetch overall trade statistics
+      try {
+        const statsRes = await api.trades.stats();
+        console.log('Trade Stats Response:', statsRes.data);
+        const transformedStats = transformTradeStats(statsRes.data);
+        setTradeStats(transformedStats);
+      } catch (statsError) {
+        console.warn("Failed to fetch trade stats:", statsError);
+      }
+
       console.log('=== DASHBOARD FETCH SUCCESS ===');
     } catch (error: any) {
       const errorMsg = error?.message || 'Unknown error occurred';
@@ -150,6 +168,7 @@ export default function Dashboard() {
         });
         setTrades([]);
         setProfitData([]);
+        setTradeStats(null);
       } else {
         setError(`${errorMsg}`);
       }
@@ -244,6 +263,11 @@ export default function Dashboard() {
     );
   }
 
+  // Calculate Balance Trend (Simulated using profit for today if history is missing)
+  const balanceTrend = botStatus?.balance && botStatus.profit
+    ? (botStatus.profit / (botStatus.balance - botStatus.profit)) * 100
+    : 0;
+
   return (
     <DashboardLayout title="Dashboard">
       <div className="space-y-6">
@@ -288,7 +312,10 @@ export default function Dashboard() {
             title="Account Balance"
             value={formatCurrency(botStatus?.balance || 0)}
             icon={Wallet}
-            trend={{ value: 2.5, label: 'vs yesterday' }}
+            trend={{
+              value: Number(balanceTrend.toFixed(1)),
+              label: 'today'
+            }}
           />
           <StatsCard
             title="Today's P/L"
@@ -304,7 +331,7 @@ export default function Dashboard() {
             title="Trades Today"
             value={botStatus?.trades_today || 0}
             icon={BarChart3}
-            subtitle="Daily average: 45"
+            subtitle={`Daily average: ${tradeStats?.daily_average || 0}`}
           />
           <StatsCard
             title="Active Positions"
@@ -319,7 +346,7 @@ export default function Dashboard() {
             variant={
               (botStatus?.win_rate || 0) >= 50 ? 'success' : 'danger'
             }
-            subtitle="Overall: 54.2%"
+            subtitle={`Overall: ${(tradeStats?.win_rate || 0).toFixed(1)}%`}
           />
         </div>
 

@@ -47,7 +47,7 @@ export function transformBotStatus(backendStatus: BackendBotStatus | any): Front
   }
 
   console.log('Full bot status object:', backendStatus);
-  
+
   // Extract statistics if available
   const stats = backendStatus.statistics || {};
   console.log('Statistics object:', stats);
@@ -55,12 +55,12 @@ export function transformBotStatus(backendStatus: BackendBotStatus | any): Front
   // Handle different possible field names from backend
   // Status fields
   const uptime = backendStatus.uptime_seconds ?? backendStatus.uptime ?? 0;
-  
+
   // Trades/Stats fields (from statistics object or top level)
   const tradesCount = stats.total_trades ?? backendStatus.total_trades ?? backendStatus.trades_today ?? 0;
   const profit = stats.total_pnl ?? stats.daily_pnl ?? backendStatus.pnl ?? backendStatus.profit ?? 0;
   const rate = stats.win_rate ?? backendStatus.win_rate ?? backendStatus.winrate ?? 0;
-  
+
   // Optional fields with defaults
   const accountBalance = backendStatus.balance ?? backendStatus.account_balance ?? 0;
   const activePos = backendStatus.active_positions ?? backendStatus.open_positions ?? 0;
@@ -95,13 +95,13 @@ export function generateProfitChartData(
 
   for (let i = 0; i < 24; i++) {
     const hour = String(i).padStart(2, '0');
-    
+
     // Generate variation based on trading activity
     const hourlyTrades = avgTradePerHour + (Math.random() - 0.5) * 2;
     const hourlyProfit = (totalProfit / 24) * (1 + Math.random() * 0.5 - 0.25);
-    
+
     cumulativeProfit += hourlyProfit;
-    
+
     data.push({
       time: `${hour}:00`,
       profit: Math.round(cumulativeProfit * 100) / 100,
@@ -109,4 +109,44 @@ export function generateProfitChartData(
   }
 
   return data;
+}
+
+export interface FrontendTradeStats {
+  total_trades: number;
+  verified_trades: number;
+  win_rate: number;
+  profit_factor: number;
+  total_profit: number;
+  daily_average: number;
+  best_trade: number;
+  worst_trade: number;
+}
+
+/**
+ * Transforms backend trade statistics to frontend format
+ */
+export function transformTradeStats(data: any): FrontendTradeStats {
+  if (!data || typeof data !== 'object') {
+    return {
+      total_trades: 0,
+      verified_trades: 0,
+      win_rate: 0,
+      profit_factor: 0,
+      total_profit: 0,
+      daily_average: 0,
+      best_trade: 0,
+      worst_trade: 0,
+    };
+  }
+
+  return {
+    total_trades: Number(data.total_trades) || 0,
+    verified_trades: Number(data.verified_trades) || 0,
+    win_rate: Number(data.win_rate) || 0,
+    profit_factor: Number(data.profit_factor) || 0,
+    total_profit: Number(data.total_profit) || 0,
+    daily_average: Number(data.daily_average) || 0,
+    best_trade: Number(data.best_trade) || 0,
+    worst_trade: Number(data.worst_trade) || 0,
+  };
 }
