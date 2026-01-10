@@ -19,8 +19,19 @@ import {
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/services/api';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
-import { Loader2, Save, RotateCcw, User } from 'lucide-react';
+import { Loader2, Save, RotateCcw, User, Trash2, CheckCircle, AlertCircle } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 
 const configSchema = z.object({
   stake_amount: z.number().min(1).max(1000),
@@ -43,6 +54,10 @@ export default function Settings() {
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [hasToken, setHasToken] = useState(false);
+  const [isDeletingToken, setIsDeletingToken] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [isEditingToken, setIsEditingToken] = useState(false);
 
   const {
     register,
@@ -79,6 +94,8 @@ export default function Settings() {
       const response = await api.config.current();
       if (response.data) {
         reset(response.data);
+        // Check if there is a token (even if masked)
+        setHasToken(!!response.data.deriv_api_key && response.data.deriv_api_key !== '');
       }
     } catch (error) {
       console.error('Failed to fetch config:', error);
@@ -97,6 +114,12 @@ export default function Settings() {
       }
 
       await api.config.update(payload);
+      // If we saved a new key, update the state
+      if (payload.deriv_api_key) {
+        setHasToken(true);
+        setIsEditingToken(false);
+        setValue('deriv_api_key', ''); // Clear input for security after save
+      }
       toast({
         title: 'Settings saved',
         description: 'Your bot configuration has been updated.',
@@ -109,6 +132,36 @@ export default function Settings() {
       });
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleDeleteToken = async () => {
+    setIsDeletingToken(true);
+    try {
+      if (!user?.id) throw new Error("User not authenticated");
+
+      const { error } = await supabase
+        .from('profiles')
+        .update({ deriv_api_key: null })
+        .eq('id', user.id);
+
+      if (error) throw error;
+
+      setValue('deriv_api_key', '');
+      setHasToken(false);
+      setShowDeleteDialog(false);
+      toast({
+        title: 'Token Deleted',
+        description: 'Your Deriv API token has been removed.',
+      });
+    } catch (error: any) {
+      toast({
+        title: 'Failed to delete token',
+        description: error.message || 'An error occurred',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsDeletingToken(false);
     }
   };
 
@@ -141,19 +194,91 @@ export default function Settings() {
             {/* API Configuration */}
             <div className="stat-card">
               <h3 className="font-semibold text-foreground mb-6">API Configuration</h3>
-              <div className="space-y-2">
+
+              <div className="space-y-4">
                 <Label htmlFor="deriv_api_key">Deriv API Token</Label>
-                <div className="flex gap-2">
-                  <Input
-                    id="deriv_api_key"
-                    type="password"
-                    placeholder="Enter your Deriv API Token"
-                    {...register('deriv_api_key')}
-                  />
-                </div>
+
+                {hasToken && !isEditingToken ? (
+                  <div className="flex items-center justify-between p-4 border rounded-lg bg-secondary/50">
+                    <div className="flex items-center gap-3">
+                      <CheckCircle className="w-5 h-5 text-green-500" />
+                      <div>
+                        <p className="font-medium">Token Saved</p>
+                        <p className="text-xs text-muted-foreground">••••••••••••••••</p>
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setIsEditingToken(true)}
+                      >
+                        Update
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => setShowDeleteDialog(true)}
+                      >
+                        <Trash2 className="w-4 h-4 mr-2" />
+                        Delete
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <div className="flex gap-2">
+                      <Input
+                        id="deriv_api_key"
+                        type="password"
+                        placeholder={isEditingToken ? "Enter new API Token" : "Enter your Deriv API Token"}
+                        {...register('deriv_api_key')}
+                      />
+                      {isEditingToken && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          onClick={() => {
+                            setIsEditingToken(false);
+                            setValue('deriv_api_key', '');
+                          }}
+                        >
+                          Cancel
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                )}
+
                 <p className="text-xs text-muted-foreground">
                   Your API token is encrypted and stored securely. Create a token with 'Read' and 'Trade' scopes in your Deriv account settings.
                 </p>
+
+                {/* Delete Confirmation Dialog */}
+                <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Delete API Token?</DialogTitle>
+                      <DialogDescription>
+                        Are you sure you want to delete your stored API token? The bot will stop running immediately if it is active.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                      <Button variant="outline" onClick={() => setShowDeleteDialog(false)}>Cancel</Button>
+                      <Button
+                        variant="destructive"
+                        onClick={handleDeleteToken}
+                        disabled={isDeletingToken}
+                      >
+                        {isDeletingToken ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                        Delete Token
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+
               </div>
             </div>
 
