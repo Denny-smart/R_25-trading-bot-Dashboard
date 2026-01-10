@@ -6,7 +6,7 @@ import { Progress } from '@/components/ui/progress';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
 import { api } from '@/services/api';
-import { formatDate } from '@/lib/formatters';
+import { formatDate, formatDuration } from '@/lib/formatters';
 import { cn } from '@/lib/utils';
 import { Signal, Cpu, HardDrive, Activity, Wifi, CheckCircle2, AlertCircle } from 'lucide-react';
 import { transformSignals, transformPerformance, type FrontendSignal, type FrontendPerformance } from '@/lib/monitoringTransformers';
@@ -43,14 +43,20 @@ export default function Monitoring() {
 
   const fetchData = async () => {
     try {
-      const [signalsRes, performanceRes] = await Promise.all([
+      const [signalsRes, performanceRes, botStatusRes] = await Promise.all([
         api.monitor.signals(),
         api.monitor.performance(),
+        api.bot.status(),
       ]);
 
       // Transform backend data to frontend format
       const transformedSignals = transformSignals(signalsRes.data || []);
       const transformedPerformance = transformPerformance(performanceRes.data);
+
+      // Override uptime with reliable data from bot status
+      if (botStatusRes.data?.uptime !== undefined) {
+        transformedPerformance.uptime = formatDuration(botStatusRes.data.uptime);
+      }
 
       setSignals(transformedSignals);
       setPerformance(transformedPerformance);
