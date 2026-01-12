@@ -42,12 +42,12 @@ export default function Logs() {
     fetchLogs();
 
     // WebSocket listener for real-time logs
-    wsService.on('log_message', (data: any) => {
+    wsService.on('log', (data: any) => {
       setLogs((prev) => [...prev, data].slice(-500)); // Keep last 500 logs
     });
 
     return () => {
-      wsService.off('log_message', () => { });
+      wsService.off('log', () => { });
     };
   }, []);
 

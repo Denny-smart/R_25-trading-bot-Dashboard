@@ -4,6 +4,7 @@ import { StatsCard } from '@/components/dashboard/StatsCard';
 import { BotControl } from '@/components/dashboard/BotControl';
 import { RecentTrades } from '@/components/dashboard/RecentTrades';
 import { ProfitChart } from '@/components/dashboard/ProfitChart';
+import { LogTerminal } from '@/components/dashboard/LogTerminal';
 import { useAuth } from '@/contexts/AuthContext';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -365,6 +366,9 @@ export default function Dashboard() {
           <RecentTrades trades={trades} />
           <ProfitChart data={profitData} />
         </div>
+
+        {/* Live Bot Logs */}
+        <LogTerminal />
       </div>
     </DashboardLayout>
   );
