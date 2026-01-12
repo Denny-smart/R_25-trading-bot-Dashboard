@@ -34,16 +34,46 @@ export default function Logs() {
   const [searchTerm, setSearchTerm] = useState('');
   const [levelFilter, setLevelFilter] = useState<string>('all');
   const [autoScroll, setAutoScroll] = useState(true);
-  const [autoRefresh, setAutoRefresh] = useState(true);
+  const [autoRefresh, setAutoRefresh] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+
+  const parseLogString = (logString: string, index: number): LogEntry => {
+    // Format: "2025-12-17 10:19:06 | INFO | [OK] Fetched 150 candles (60s)"
+    const match = logString.match(/^(.+?)\s*\|\s*([A-Z]+)\s*\|\s*(.+)$/);
+    if (match) {
+      const [, timestamp, level, message] = match;
+      // Clean user tags like [user_123] or [None] from the message
+      const cleanMessage = message.replace(/^\[.*?\]\s*/, '').trim();
+      return {
+        id: `log-${Date.now()}-${index}`,
+        timestamp: timestamp.trim(),
+        level: (level.trim() as 'INFO' | 'WARNING' | 'ERROR' | 'DEBUG') || 'INFO',
+        message: cleanMessage,
+      };
+    }
+    // Fallback for unparseable logs
+    return {
+      id: `log-${Date.now()}-${index}`,
+      timestamp: new Date().toISOString(),
+      level: 'INFO',
+      message: logString,
+    };
+  };
 
   useEffect(() => {
     fetchLogs();
 
     // WebSocket listener for real-time logs
     wsService.on('log', (data: any) => {
-      setLogs((prev) => [...prev, data].slice(-500)); // Keep last 500 logs
+      if (data && data.message) {
+        setLogs((prev) => {
+          const newLog = parseLogString(data.message, prev.length);
+          // If the backend sends specific fields, we could optionally override parsed ones, 
+          // but the message string is the source of truth for display as per requirements.
+          return [...prev, newLog].slice(-500);
+        });
+      }
     });
 
     return () => {
@@ -72,27 +102,6 @@ export default function Logs() {
     }
   }, [logs, autoScroll]);
 
-  const parseLogString = (logString: string, index: number): LogEntry => {
-    // Format: "2025-12-17 10:19:06 | INFO | [OK] Fetched 150 candles (60s)"
-    const match = logString.match(/^(.+?)\s*\|\s*([A-Z]+)\s*\|\s*(.+)$/);
-    if (match) {
-      const [, timestamp, level, message] = match;
-      return {
-        id: `log-${index}`,
-        timestamp: timestamp.trim(),
-        level: (level.trim() as 'INFO' | 'WARNING' | 'ERROR' | 'DEBUG') || 'INFO',
-        message: message.trim(),
-      };
-    }
-    // Fallback for unparseable logs
-    return {
-      id: `log-${index}`,
-      timestamp: new Date().toISOString(),
-      level: 'INFO',
-      message: logString,
-    };
-  };
-
   const fetchLogs = async () => {
     try {
       const response = await api.monitor.logs();
@@ -101,7 +110,6 @@ export default function Logs() {
       const parsedLogs = logsData.map((log: string | LogEntry, index: number) =>
         typeof log === 'string' ? parseLogString(log, index) : log
       );
-      setLogs(parsedLogs);
       setLogs(parsedLogs);
     } catch (error) {
       console.error('Failed to fetch logs:', error);
