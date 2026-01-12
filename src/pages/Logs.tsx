@@ -33,10 +33,25 @@ export default function Logs() {
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [levelFilter, setLevelFilter] = useState<string>('all');
-  const [autoScroll, setAutoScroll] = useState(true);
-  const [autoRefresh, setAutoRefresh] = useState(false);
+  const [autoScroll, setAutoScroll] = useState(() => {
+    const saved = localStorage.getItem('logs_autoScroll');
+    return saved !== null ? JSON.parse(saved) : true;
+  });
+  const [autoRefresh, setAutoRefresh] = useState(() => {
+    const saved = localStorage.getItem('logs_autoRefresh');
+    return saved !== null ? JSON.parse(saved) : false;
+  });
   const [isLoading, setIsLoading] = useState(true);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+
+  // Save preferences to localStorage when they change
+  useEffect(() => {
+    localStorage.setItem('logs_autoScroll', JSON.stringify(autoScroll));
+  }, [autoScroll]);
+
+  useEffect(() => {
+    localStorage.setItem('logs_autoRefresh', JSON.stringify(autoRefresh));
+  }, [autoRefresh]);
 
   const parseLogString = (logString: string, index: number): LogEntry => {
     // Format: "2025-12-17 10:19:06 | INFO | [OK] Fetched 150 candles (60s)"
