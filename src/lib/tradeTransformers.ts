@@ -71,19 +71,39 @@ export function transformTrade(backendTrade: BackendTrade | any, index: number =
     console.log('First trade full data:', JSON.stringify(backendTrade, null, 2));
   }
 
-  const direction = (backendTrade.direction === 'BUY' || backendTrade.direction === 'RISE') ? 'RISE' : 'FALL';
+  // Map direction: CALL -> RISE, PUT -> FALL
+  let mappedDirection: 'RISE' | 'FALL' = 'RISE';
+  const rawDirection = String(backendTrade.direction || '').toUpperCase();
+  if (rawDirection === 'FALL' || rawDirection === 'SELL' || rawDirection === 'PUT') {
+    mappedDirection = 'FALL';
+  }
+
   const time = backendTrade.time || backendTrade.timestamp || new Date().toISOString();
-  
-  // Determine status based on pnl for history trades
-  let status: 'open' | 'win' | 'loss' | 'closed' = backendTrade.status as any;
-  if (backendTrade.pnl !== null && backendTrade.pnl !== undefined && backendTrade.status === 'open') {
-    status = backendTrade.pnl > 0 ? 'win' : backendTrade.pnl < 0 ? 'loss' : 'closed';
+
+  // Map status: won -> win, lost -> loss, sold -> closed
+  let status: 'open' | 'win' | 'loss' | 'closed' = 'open';
+  const rawStatus = String(backendTrade.status || 'open');
+
+  if (rawStatus === 'won' || rawStatus === 'win') {
+    status = 'win';
+  } else if (rawStatus === 'lost' || rawStatus === 'loss') {
+    status = 'loss';
+  } else if (rawStatus === 'sold') {
+    // If sold, check PnL to determine win/loss, otherwise closed
+    if (backendTrade.pnl !== null && backendTrade.pnl !== undefined) {
+      status = backendTrade.pnl >= 0 ? 'win' : 'loss';
+    } else {
+      status = 'closed';
+    }
+  } else if (backendTrade.pnl !== null && backendTrade.pnl !== undefined && rawStatus !== 'open') {
+    // Fallback if status matches none but we have PnL
+    status = backendTrade.pnl >= 0 ? 'win' : 'loss';
   }
 
   const transformed: FrontendTrade = {
     id: backendTrade.contract_id || backendTrade.id || `trade-${index}`,
     time,
-    direction,
+    direction: mappedDirection,
     entry_price: Number(backendTrade.entry_price) || 0,
     exit_price: backendTrade.exit_price ? Number(backendTrade.exit_price) : undefined,
     stake: Number(backendTrade.stake) || 0,
@@ -100,9 +120,14 @@ export function transformTrade(backendTrade: BackendTrade | any, index: number =
  * Transforms backend trades array to frontend format
  */
 export function transformTrades(backendTrades: (BackendTrade | any)[] | any): FrontendTrade[] {
+  // Handle case where backendTrades is an object with a trades property
+  if (!Array.isArray(backendTrades) && backendTrades && typeof backendTrades === 'object' && Array.isArray(backendTrades.trades)) {
+    return backendTrades.trades.map((trade: any, index: number) => transformTrade(trade, index));
+  }
+
   // Handle case where backendTrades is not an array
   if (!Array.isArray(backendTrades)) {
-    console.warn('Expected array of trades, got:', typeof backendTrades);
+    console.warn('Expected array of trades, got:', typeof backendTrades, backendTrades);
     return [];
   }
 
@@ -113,16 +138,16 @@ export function transformTrades(backendTrades: (BackendTrade | any)[] | any): Fr
  * Transforms backend trade stats to frontend format
  */
 export function transformTradeStats(backendStats: BackendTradeStats): FrontendTradeStats {
-  const avgWin = backendStats.winning_trades > 0 
-    ? backendStats.total_pnl / backendStats.winning_trades 
-    : 0;
-  
-  const avgLoss = backendStats.losing_trades > 0 
-    ? backendStats.total_pnl / backendStats.losing_trades 
+  const avgWin = backendStats.winning_trades > 0
+    ? backendStats.total_pnl / backendStats.winning_trades
     : 0;
 
-  const profitFactor = avgLoss !== 0 && avgLoss < 0 
-    ? Math.abs(avgWin / avgLoss) 
+  const avgLoss = backendStats.losing_trades > 0
+    ? backendStats.total_pnl / backendStats.losing_trades
+    : 0;
+
+  const profitFactor = avgLoss !== 0 && avgLoss < 0
+    ? Math.abs(avgWin / avgLoss)
     : avgWin > 0 ? Infinity : 0;
 
   return {

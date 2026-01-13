@@ -129,8 +129,7 @@ export default function Dashboard() {
       try {
         const tradesRes = await api.trades.active();
         console.log('Active Trades Response:', tradesRes.data);
-        const tradesArray = Array.isArray(tradesRes.data) ? tradesRes.data : [];
-        const activeTrades = transformTrades(tradesArray);
+        const activeTrades = transformTrades(tradesRes.data);
         setTrades(activeTrades.slice(0, 10));
       } catch (tradeError) {
         console.warn("Failed to fetch trades:", tradeError);
