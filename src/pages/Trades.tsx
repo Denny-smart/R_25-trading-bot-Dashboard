@@ -21,7 +21,7 @@ import { api } from '@/services/api';
 import { formatCurrency, formatDate, formatDuration } from '@/lib/formatters';
 import { cn } from '@/lib/utils';
 import { Download, Search, Filter, ArrowUp, ArrowDown } from 'lucide-react';
-import { transformTrades, transformTradeStats, type FrontendTrade, type FrontendTradeStats } from '@/lib/tradeTransformers';
+import { transformTrades, calculateTradeStats, type FrontendTrade, type FrontendTradeStats } from '@/lib/tradeTransformers';
 
 interface Trade {
   id: string;
@@ -66,10 +66,9 @@ export default function Trades() {
   const fetchData = async () => {
     setIsLoading(true);
     try {
-      const [activeRes, historyRes, statsRes, configRes] = await Promise.all([
+      const [activeRes, historyRes, configRes] = await Promise.all([
         api.trades.active(),
         api.trades.history(),
-        api.trades.stats(),
         api.config.current(),
       ]);
 
@@ -78,7 +77,7 @@ export default function Trades() {
       // Transform backend data to frontend format
       const activeTrades = transformTrades(activeRes.data || []);
       const historyTrades = transformTrades(historyRes.data || []);
-      const stats = transformTradeStats(statsRes.data);
+      const stats = calculateTradeStats(historyTrades);
 
       setActiveTrades(activeTrades);
       setHistoryTrades(historyTrades);

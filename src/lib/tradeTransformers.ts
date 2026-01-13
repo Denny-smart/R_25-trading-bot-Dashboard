@@ -162,3 +162,60 @@ export function transformTradeStats(backendStats: BackendTradeStats): FrontendTr
     profit_factor: profitFactor,
   };
 }
+
+/**
+ * Calculates trade statistics from a list of frontend trades
+ */
+export function calculateTradeStats(trades: FrontendTrade[]): FrontendTradeStats {
+  const closedTrades = trades.filter(t => t.status === 'win' || t.status === 'loss' || t.status === 'closed');
+  const wins = closedTrades.filter(t => t.status === 'win');
+  const losses = closedTrades.filter(t => t.status === 'loss');
+
+  const totalTrades = closedTrades.length;
+  const winRate = totalTrades > 0 ? (wins.length / totalTrades) * 100 : 0;
+
+  const totalProfit = closedTrades.reduce((sum, t) => sum + (t.profit || 0), 0);
+  
+  // Calculate Avg Win
+  const totalWinAmount = wins.reduce((sum, t) => sum + (t.profit || 0), 0);
+  const avgWin = wins.length > 0 ? totalWinAmount / wins.length : 0;
+
+  // Calculate Avg Loss (as positive number usually, or keep negative? UI shows red for loss)
+  // The UI formatter likely handles signs, or expects positive value for "Avg Loss" if it puts a minus sign itself?
+  // Looking at the original code: `avg_loss: Math.abs(avgLoss)` suggesting it wants a positive number for the magnitude.
+  // And `largest_loss` also seems to be treated.
+  // Let's check `Trades.tsx`:
+  // <p className="text-3xl font-bold text-destructive mt-2">{formatCurrency(stats?.avg_loss || 0)}</p>
+  // formatCurrency usually formats the number as is. If it's negative, it shows -. 
+  // If the label is "Avg Loss", usually users expect a positive number representing the magnitude, or a negative number.
+  // The previous transformer used `Math.abs(avgLoss)`. So I will return positive magnitude for Avg Loss and Largest Loss.
+  
+  const totalLossAmount = losses.reduce((sum, t) => sum + (t.profit || 0), 0); // This will be negative
+  const avgLoss = losses.length > 0 ? Math.abs(totalLossAmount / losses.length) : 0;
+
+  const largestWin = wins.length > 0 ? Math.max(...wins.map(t => t.profit || 0)) : 0;
+  const largestLoss = losses.length > 0 ? Math.abs(Math.min(...losses.map(t => t.profit || 0))) : 0;
+
+  const profitFactor = Math.abs(totalLossAmount) > 0 ? totalWinAmount / Math.abs(totalLossAmount) : (totalWinAmount > 0 ? Infinity : 0);
+
+  // Avg Duration
+  // We need duration in the trade object. Logic:
+  // If trade has duration, use it. If not, and we have entry/exit times? 
+  // The interface has `duration?: number`.
+  const validDurations = closedTrades.filter(t => t.duration !== undefined).map(t => t.duration as number);
+  const avgDuration = validDurations.length > 0 
+    ? validDurations.reduce((a, b) => a + b, 0) / validDurations.length 
+    : 0;
+
+  return {
+    total_trades: totalTrades,
+    win_rate: winRate,
+    total_profit: totalProfit,
+    avg_win: avgWin,
+    avg_loss: avgLoss,
+    largest_win: largestWin,
+    largest_loss: largestLoss,
+    avg_duration: avgDuration,
+    profit_factor: profitFactor,
+  };
+}
