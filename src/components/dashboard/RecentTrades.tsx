@@ -3,19 +3,10 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { formatCurrency, formatTimeAgo } from '@/lib/formatters';
 import { cn } from '@/lib/utils';
 import { ArrowUp, ArrowDown } from 'lucide-react';
-
-interface Trade {
-  id: string;
-  time: string;
-  direction: 'RISE' | 'FALL';
-  entry_price: number;
-  exit_price?: number;
-  profit?: number;
-  status: 'open' | 'closed' | 'win' | 'loss';
-}
+import { type FrontendTrade } from '@/lib/tradeTransformers';
 
 interface RecentTradesProps {
-  trades: Trade[];
+  trades: FrontendTrade[];
 }
 
 export function RecentTrades({ trades }: RecentTradesProps) {
@@ -44,12 +35,12 @@ export function RecentTrades({ trades }: RecentTradesProps) {
                   <div
                     className={cn(
                       'p-2 rounded-lg',
-                      trade.direction === 'RISE'
+                      trade.direction === 'UP'
                         ? 'bg-success/20 text-success'
                         : 'bg-destructive/20 text-destructive'
                     )}
                   >
-                    {trade.direction === 'RISE' ? (
+                    {trade.direction === 'UP' ? (
                       <ArrowUp className="w-4 h-4" />
                     ) : (
                       <ArrowDown className="w-4 h-4" />
@@ -60,7 +51,7 @@ export function RecentTrades({ trades }: RecentTradesProps) {
                       <Badge
                         className={cn(
                           'text-xs',
-                          trade.direction === 'RISE' ? 'badge-rise' : 'badge-fall'
+                          trade.direction === 'UP' ? 'badge-rise' : 'badge-fall'
                         )}
                       >
                         {trade.direction}
