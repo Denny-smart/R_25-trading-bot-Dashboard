@@ -16,6 +16,7 @@ import {
   Zap,
   Percent,
   RefreshCw,
+  Shield,
 } from 'lucide-react';
 import { api } from '@/services/api';
 import { wsService } from '@/services/websocket';
@@ -97,6 +98,7 @@ export default function Dashboard() {
         console.warn("No API key found. Resetting dashboard data.");
         setBotStatus({
           status: 'stopped',
+          active_strategy: 'Unknown',
           uptime: 0,
           trades_today: 0,
           balance: 0,
@@ -158,6 +160,7 @@ export default function Dashboard() {
         // Reset data just in case
         setBotStatus({
           status: 'stopped',
+          active_strategy: 'Unknown',
           uptime: 0,
           trades_today: 0,
           balance: 0,
@@ -291,11 +294,17 @@ export default function Dashboard() {
           </Button>
         </div>
 
-        {/* Role Badge */}
+        {/* Role Badge & Status */}
         <div className="flex items-center gap-2">
           <Badge variant={role === 'admin' ? 'default' : 'secondary'} className="text-sm px-3 py-1">
             Role: {role ? role.charAt(0).toUpperCase() + role.slice(1) : 'User'}
           </Badge>
+          {botStatus?.active_strategy && (
+            <Badge variant="outline" className="text-sm px-3 py-1 flex items-center gap-1">
+              <Shield className="w-3 h-3" />
+              Strategy: {botStatus.active_strategy}
+            </Badge>
+          )}
         </div>
 
         {/* Stats Cards */}

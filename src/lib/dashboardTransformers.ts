@@ -4,6 +4,7 @@
 
 export interface BackendBotStatus {
   status: 'running' | 'stopped';
+  active_strategy?: string;
   uptime_seconds?: number;
   uptime?: number;
   trades_today?: number;
@@ -18,6 +19,7 @@ export interface BackendBotStatus {
 
 export interface FrontendBotStatus {
   status: 'running' | 'stopped';
+  active_strategy: string;
   uptime: number;
   trades_today: number;
   balance: number;
@@ -36,6 +38,7 @@ export function transformBotStatus(backendStatus: BackendBotStatus | any): Front
     console.warn('Invalid bot status data received:', backendStatus);
     return {
       status: 'stopped',
+      active_strategy: 'Unknown',
       uptime: 0,
       trades_today: 0,
       balance: 0,
@@ -55,6 +58,7 @@ export function transformBotStatus(backendStatus: BackendBotStatus | any): Front
   // Handle different possible field names from backend
   // Status fields
   const uptime = backendStatus.uptime_seconds ?? backendStatus.uptime ?? 0;
+  const activeStrategy = backendStatus.active_strategy ?? 'Unknown';
 
   // Trades/Stats fields (from statistics object or top level)
   const tradesCount = stats.total_trades ?? backendStatus.total_trades ?? backendStatus.trades_today ?? 0;
@@ -68,6 +72,7 @@ export function transformBotStatus(backendStatus: BackendBotStatus | any): Front
 
   const transformed: FrontendBotStatus = {
     status: backendStatus.status || 'stopped',
+    active_strategy: activeStrategy,
     uptime: Number(uptime) || 0,
     trades_today: Number(tradesCount) || 0,
     balance: Number(accountBalance) || 0,

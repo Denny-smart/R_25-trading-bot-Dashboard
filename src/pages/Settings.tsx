@@ -7,8 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
-import { Slider } from '@/components/ui/slider';
+
 import {
   Select,
   SelectContent,
@@ -42,7 +41,7 @@ const configSchema = z.object({
   trailing_stop_enabled: z.boolean(),
   trailing_stop_distance: z.number().min(0).max(50),
   max_consecutive_losses: z.number().min(1).max(20),
-  strategy: z.string(),
+  active_strategy: z.string(),
   timeframe: z.string(),
   signal_threshold: z.number().min(0).max(100),
   deriv_api_key: z.string().optional(),
@@ -69,7 +68,7 @@ export default function Settings() {
   } = useForm<ConfigForm>({
     resolver: zodResolver(configSchema),
     defaultValues: {
-      stake_amount: 10,
+      stake_amount: 50,
       max_daily_trades: 50,
       max_daily_loss: 100,
       stop_loss_percent: 5,
@@ -77,7 +76,7 @@ export default function Settings() {
       trailing_stop_enabled: false,
       trailing_stop_distance: 2,
       max_consecutive_losses: 5,
-      strategy: 'default',
+      active_strategy: 'Conservative',
       timeframe: '1m',
       signal_threshold: 70,
       deriv_api_key: '',
@@ -287,7 +286,7 @@ export default function Settings() {
               <h3 className="font-semibold text-foreground mb-6">Trading Parameters</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <div className="space-y-2">
-                  <Label htmlFor="stake_amount">Stake Amount ($)</Label>
+                  <Label htmlFor="stake_amount">Trade Stake Amount ($)</Label>
                   <Input
                     id="stake_amount"
                     type="number"
@@ -298,74 +297,11 @@ export default function Settings() {
                   )}
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="max_daily_trades">Max Daily Trades</Label>
-                  <Input
-                    id="max_daily_trades"
-                    type="number"
-                    {...register('max_daily_trades', { valueAsNumber: true })}
-                  />
-                </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="max_daily_loss">Max Daily Loss ($)</Label>
-                  <Input
-                    id="max_daily_loss"
-                    type="number"
-                    {...register('max_daily_loss', { valueAsNumber: true })}
-                  />
-                </div>
               </div>
             </div>
 
-            {/* Risk Management */}
-            <div className="stat-card">
-              <h3 className="font-semibold text-foreground mb-6">Risk Management</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-4">
-                  <Label>Stop Loss: {stopLossPercent}%</Label>
-                  <Slider
-                    value={[stopLossPercent]}
-                    onValueChange={([value]) => setValue('stop_loss_percent', value)}
-                    max={100}
-                    step={1}
-                  />
-                </div>
 
-                <div className="space-y-4">
-                  <Label>Take Profit: {takeProfitPercent}%</Label>
-                  <Slider
-                    value={[takeProfitPercent]}
-                    onValueChange={([value]) => setValue('take_profit_percent', value)}
-                    max={100}
-                    step={1}
-                  />
-                </div>
-
-                <div className="flex items-center justify-between p-4 rounded-lg bg-secondary">
-                  <div>
-                    <Label htmlFor="trailing_stop">Enable Trailing Stop</Label>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Automatically adjust stop loss as profit increases
-                    </p>
-                  </div>
-                  <Switch
-                    id="trailing_stop"
-                    checked={trailingStopEnabled}
-                    onCheckedChange={(checked) => setValue('trailing_stop_enabled', checked)}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="max_consecutive_losses">Max Consecutive Losses</Label>
-                  <Input
-                    id="max_consecutive_losses"
-                    type="number"
-                    {...register('max_consecutive_losses', { valueAsNumber: true })}
-                  />
-                </div>
-              </div>
-            </div>
 
             {/* Strategy Settings */}
             <div className="stat-card">
@@ -374,52 +310,33 @@ export default function Settings() {
                 <div className="space-y-2">
                   <Label>Strategy</Label>
                   <Select
-                    value={watch('strategy')}
-                    onValueChange={(value) => setValue('strategy', value)}
+                    value={watch('active_strategy')}
+                    onValueChange={(value) => setValue('active_strategy', value)}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select strategy" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="default">Default</SelectItem>
-                      <SelectItem value="aggressive">Aggressive</SelectItem>
-                      <SelectItem value="conservative">Conservative</SelectItem>
-                      <SelectItem value="scalping">Scalping</SelectItem>
+                      <SelectItem value="Conservative">Conservative</SelectItem>
+                      <SelectItem value="Scalping">Scalping</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
 
-                <div className="space-y-2">
-                  <Label>Timeframe</Label>
-                  <Select
-                    value={watch('timeframe')}
-                    onValueChange={(value) => setValue('timeframe', value)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select timeframe" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="1m">1 Minute</SelectItem>
-                      <SelectItem value="5m">5 Minutes</SelectItem>
-                      <SelectItem value="15m">15 Minutes</SelectItem>
-                      <SelectItem value="1h">1 Hour</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
 
-                <div className="space-y-4">
-                  <Label>Signal Threshold: {signalThreshold}%</Label>
-                  <Slider
-                    value={[signalThreshold]}
-                    onValueChange={([value]) => setValue('signal_threshold', value)}
-                    max={100}
-                    step={1}
-                  />
-                </div>
               </div>
             </div>
 
             {/* Actions */}
+            {/* Hidden Fields */}
+            <input type="hidden" {...register('max_daily_trades', { valueAsNumber: true })} />
+            <input type="hidden" {...register('max_daily_loss', { valueAsNumber: true })} />
+            <input type="hidden" {...register('stop_loss_percent', { valueAsNumber: true })} />
+            <input type="hidden" {...register('take_profit_percent', { valueAsNumber: true })} />
+            <input type="hidden" {...register('max_consecutive_losses', { valueAsNumber: true })} />
+            <input type="hidden" {...register('timeframe')} />
+            <input type="hidden" {...register('signal_threshold', { valueAsNumber: true })} />
+
             <div className="flex gap-4">
               <Button type="submit" disabled={isSaving} className="gap-2">
                 {isSaving ? (
