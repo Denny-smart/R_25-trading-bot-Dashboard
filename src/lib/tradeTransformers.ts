@@ -18,7 +18,7 @@ export interface BackendTrade {
 export interface FrontendTrade {
   id: string;
   time: string;
-  direction: 'RISE' | 'FALL';
+  direction: 'UP' | 'DOWN';
   entry_price: number;
   exit_price?: number;
   stake: number;
@@ -59,7 +59,7 @@ export function transformTrade(backendTrade: BackendTrade | any, index: number =
     return {
       id: `unknown-${index}`,
       time: new Date().toISOString(),
-      direction: 'RISE',
+      direction: 'UP',
       entry_price: 0,
       stake: 0,
       status: 'open',
@@ -71,11 +71,11 @@ export function transformTrade(backendTrade: BackendTrade | any, index: number =
     console.log('First trade full data:', JSON.stringify(backendTrade, null, 2));
   }
 
-  // Map direction: CALL -> RISE, PUT -> FALL
-  let mappedDirection: 'RISE' | 'FALL' = 'RISE';
+  // Map direction: CALL/BUY -> UP, PUT/SELL -> DOWN
+  let mappedDirection: 'UP' | 'DOWN' = 'UP';
   const rawDirection = String(backendTrade.direction || backendTrade.contract_type || backendTrade.type || '').toUpperCase();
-  if (rawDirection === 'FALL' || rawDirection === 'SELL' || rawDirection === 'PUT') {
-    mappedDirection = 'FALL';
+  if (rawDirection === 'FALL' || rawDirection === 'SELL' || rawDirection === 'PUT' || rawDirection === 'DOWN') {
+    mappedDirection = 'DOWN';
   }
 
   const time = backendTrade.time || backendTrade.timestamp || new Date().toISOString();

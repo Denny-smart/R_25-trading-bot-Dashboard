@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 interface LogMessage {
+    id: string;
     type: "log";
     level: "INFO" | "WARNING" | "ERROR" | "DEBUG";
     message: string;
@@ -19,11 +20,16 @@ interface LogMessage {
 export function LogTerminal() {
     const [logs, setLogs] = useState<LogMessage[]>([]);
     const [autoScroll, setAutoScroll] = useState(true);
-    const scrollRef = useRef<HTMLDivElement>(null);
-    const viewportRef = useRef<HTMLDivElement | null>(null);
+    const logsEndRef = useRef<HTMLDivElement>(null);
+    const [mounted, setMounted] = useState(false);
+
+    // Generate specific ID for logs to avoid duplicate keys
+    const generateLogId = (timestamp: number, message: string, index: number) => {
+        return `${timestamp}-${message.substring(0, 20)}-${index}`;
+    };
 
     // Parse log string from API into LogMessage format
-    const parseLogString = (logString: string): LogMessage | null => {
+    const parseLogString = (logString: string, index: number): LogMessage | null => {
         // Format: "2026-01-12 14:30:05 | INFO | [user_123] Message content"
         const match = logString.match(/^(.+?)\s*\|\s*([A-Z]+)\s*\|\s*(.+)$/);
         if (match) {
@@ -36,6 +42,7 @@ export function LogTerminal() {
             const unixTimestamp = date.getTime() / 1000;
 
             return {
+                id: generateLogId(unixTimestamp, cleanMessage, index),
                 type: "log",
                 level: (level.trim() as "INFO" | "WARNING" | "ERROR" | "DEBUG") || "INFO",
                 message: cleanMessage,
@@ -45,36 +52,57 @@ export function LogTerminal() {
         return null;
     };
 
-    // Fetch initial logs on mount
+    const fetchLogs = async () => {
+        try {
+            const response = await api.monitor.logs();
+            const logsData = response.data?.logs || [];
+            
+            // Parse string logs into LogMessage objects
+            const parsedLogs = logsData
+                .map((log: string, index: number) => parseLogString(log, index))
+                .filter((log): log is LogMessage => log !== null)
+                .slice(-200); // Keep last 200 logs
+
+            setLogs(prev => {
+                // If we have no previous logs, just use the new ones
+                if (prev.length === 0) return parsedLogs;
+                
+                // If the last log is different, or length is different, update
+                // This is a simple check to avoid unnecessary re-renders if data is identical
+                const lastPrev = prev[prev.length - 1];
+                const lastNew = parsedLogs[parsedLogs.length - 1];
+                
+                if (prev.length !== parsedLogs.length || lastPrev?.id !== lastNew?.id) {
+                    return parsedLogs;
+                }
+                return prev;
+            });
+        } catch (error) {
+            console.error('Failed to fetch logs:', error);
+        }
+    };
+
+    // Fetch initial logs and set up polling
     useEffect(() => {
-        const fetchInitialLogs = async () => {
-            try {
-                const response = await api.monitor.logs();
-                const logsData = response.data?.logs || [];
-                // Parse string logs into LogMessage objects
-                const parsedLogs = logsData
-                    .map((log: string) => parseLogString(log))
-                    .filter((log): log is LogMessage => log !== null)
-                    .slice(-200); // Keep last 200 logs
+        setMounted(true);
+        fetchLogs();
 
-                setLogs(parsedLogs);
-            } catch (error) {
-                console.error('Failed to fetch initial logs:', error);
-            }
-        };
+        // Poll every 3 seconds to ensure sync even if WS misses messages
+        const pollInterval = setInterval(fetchLogs, 3000);
 
-        fetchInitialLogs();
+        return () => clearInterval(pollInterval);
     }, []);
 
+    // WebSocket listener for real-time updates
     useEffect(() => {
         const handleLog = (data: any) => {
             if (data && data.message) {
                 // Parse the message string from WebSocket
-                const parsedLog = parseLogString(data.message);
+                // Use a generic index since we don't have the full list context here
+                const parsedLog = parseLogString(data.message, Date.now());
                 if (parsedLog) {
                     setLogs((prev) => {
                         const newLogs = [...prev, parsedLog];
-                        // Keep last 200 logs to prevent memory issues
                         return newLogs.slice(-200);
                     });
                 }
@@ -88,25 +116,17 @@ export function LogTerminal() {
         };
     }, []);
 
+    // Auto-scroll logic
     useEffect(() => {
-        if (autoScroll && viewportRef.current) {
-            viewportRef.current.scrollTop = viewportRef.current.scrollHeight;
+        if (autoScroll && logsEndRef.current) {
+            // Use a small timeout to ensure DOM has updated
+            setTimeout(() => {
+                logsEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+            }, 100);
         }
     }, [logs, autoScroll]);
 
     const clearLogs = () => setLogs([]);
-
-    // Helper to attach ref to the actual viewport div of ScrollArea
-    const setRefs = (node: HTMLDivElement | null) => {
-        // @ts-ignore - ScrollArea ref structure assumption, usually works or needs specific tailored access
-        if (node) {
-            const viewport = node.querySelector('[data-radix-scroll-area-viewport]');
-            if (viewport) {
-                viewportRef.current = viewport as HTMLDivElement;
-            }
-        }
-    };
-
 
     return (
         <Card className="col-span-full border-border/50 bg-background/50 backdrop-blur-sm">
@@ -120,7 +140,13 @@ export function LogTerminal() {
                         variant="ghost"
                         size="icon"
                         className="h-6 w-6 text-muted-foreground hover:text-foreground"
-                        onClick={() => setAutoScroll(!autoScroll)}
+                        onClick={() => {
+                            setAutoScroll(!autoScroll);
+                            // If enabling, immediately scroll
+                            if (!autoScroll && logsEndRef.current) {
+                                logsEndRef.current.scrollIntoView({ behavior: 'smooth' });
+                            }
+                        }}
                         title={autoScroll ? "Pause Scrolling" : "Resume Scrolling"}
                     >
                         {autoScroll ? <Pause className="h-3 w-3" /> : <Play className="h-3 w-3" />}
@@ -137,18 +163,15 @@ export function LogTerminal() {
                 </div>
             </CardHeader>
             <CardContent>
-                <ScrollArea
-                    className="h-[300px] w-full rounded-md border bg-black/90 p-4 font-mono text-xs"
-                    ref={setRefs}
-                >
+                <ScrollArea className="h-[300px] w-full rounded-md border bg-black/90 p-4 font-mono text-xs">
                     {logs.length === 0 ? (
                         <div className="flex h-full items-center justify-center text-muted-foreground/50">
                             Waiting for incoming logs...
                         </div>
                     ) : (
                         <div className="space-y-1">
-                            {logs.map((log, i) => (
-                                <div key={i} className="flex gap-2 text-primary/90 break-all hover:bg-white/5 p-0.5 rounded transition-colors">
+                            {logs.map((log) => (
+                                <div key={log.id} className="flex gap-2 text-primary/90 break-all hover:bg-white/5 p-0.5 rounded transition-colors">
                                     <span className="text-muted-foreground shrink-0 select-none">
                                         {new Date(log.timestamp * 1000).toLocaleTimeString()}
                                     </span>
@@ -168,6 +191,8 @@ export function LogTerminal() {
                                     </span>
                                 </div>
                             ))}
+                            {/* Dummy element for scrolling to bottom */}
+                            <div ref={logsEndRef} />
                         </div>
                     )}
                 </ScrollArea>
