@@ -3,7 +3,7 @@ import { Bot, Clock, LogOut, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { api } from '@/services/api';
 import {
   Dialog,
@@ -23,6 +23,22 @@ export default function PendingApproval() {
   const [isChecking, setIsChecking] = useState(false);
   const [isRequesting, setIsRequesting] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [lockoutTime, setLockoutTime] = useState<number | null>(null);
+
+  useEffect(() => {
+    const lastRequest = localStorage.getItem('lastApprovalRequestTime');
+    if (lastRequest) {
+      const lastTime = parseInt(lastRequest, 10);
+      const now = Date.now();
+      const oneDay = 24 * 60 * 60 * 1000;
+
+      if (now - lastTime < oneDay) {
+        setLockoutTime(lastTime + oneDay);
+      } else {
+        localStorage.removeItem('lastApprovalRequestTime');
+      }
+    }
+  }, []);
 
   const handleLogout = async () => {
     await logout();
@@ -60,6 +76,11 @@ export default function PendingApproval() {
     setIsRequesting(true);
     try {
       await api.auth.requestApproval();
+
+      const now = Date.now();
+      localStorage.setItem('lastApprovalRequestTime', now.toString());
+      setLockoutTime(now + 24 * 60 * 60 * 1000);
+
       toast({
         title: 'Request Sent',
         description: 'The administrator has been notified of your request.',
@@ -136,9 +157,11 @@ export default function PendingApproval() {
 
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
               <DialogTrigger asChild>
-                <Button className="w-full">
+                <Button className="w-full" disabled={isRequesting || !!lockoutTime}>
                   <Send className="w-4 h-4 mr-2" />
-                  Request Approval
+                  {lockoutTime
+                    ? `Request Locked (${Math.ceil((lockoutTime - Date.now()) / (1000 * 60 * 60))}h)`
+                    : 'Request Approval'}
                 </Button>
               </DialogTrigger>
               <DialogContent>
@@ -146,6 +169,7 @@ export default function PendingApproval() {
                   <DialogTitle>Request Account Approval</DialogTitle>
                   <DialogDescription>
                     This will send a notification to the administrator that you are waiting for approval.
+                    You can only send one request every 24 hours.
                   </DialogDescription>
                 </DialogHeader>
                 <div className="py-4">
