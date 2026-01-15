@@ -20,7 +20,8 @@ interface LogMessage {
 export function LogTerminal() {
     const [logs, setLogs] = useState<LogMessage[]>([]);
     const [autoScroll, setAutoScroll] = useState(true);
-    const logsEndRef = useRef<HTMLDivElement>(null);
+    const scrollAreaRef = useRef<HTMLDivElement>(null);
+    const viewportRef = useRef<HTMLElement | null>(null);
     const [mounted, setMounted] = useState(false);
 
     // Generate specific ID for logs to avoid duplicate keys
@@ -116,12 +117,49 @@ export function LogTerminal() {
         };
     }, []);
 
-    // Auto-scroll logic
+    const scrollToBottom = (smooth = true) => {
+        if (viewportRef.current) {
+            viewportRef.current.scrollTo({
+                top: viewportRef.current.scrollHeight,
+                behavior: smooth ? 'smooth' : 'auto'
+            });
+        }
+    };
+
+    // Initialize ScrollArea viewport reference and add scroll listener
     useEffect(() => {
-        if (autoScroll && logsEndRef.current) {
-            // Use a small timeout to ensure DOM has updated
+        if (!scrollAreaRef.current) return;
+
+        // Radix UI ScrollArea renders a viewport with this data attribute
+        const viewport = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]') as HTMLElement;
+        if (viewport) {
+            viewportRef.current = viewport;
+
+            const handleScroll = () => {
+                const { scrollTop, scrollHeight, clientHeight } = viewport;
+                // Check if we are near the bottom (within 10px tolerance)
+                const isAtBottom = scrollHeight - (scrollTop + clientHeight) < 10;
+
+                // If user scrolls up, disable autoScroll. 
+                // If user scrolls to bottom, enable autoScroll.
+                if (isAtBottom) {
+                    setAutoScroll(true);
+                } else {
+                    setAutoScroll(false);
+                }
+            };
+
+            viewport.addEventListener('scroll', handleScroll);
+            return () => viewport.removeEventListener('scroll', handleScroll);
+        }
+    }, [mounted]); // Run when mounted ensures ref is populated
+
+    // Auto-scroll effect
+    useEffect(() => {
+        if (autoScroll) {
+            // Use a small timeout to ensure DOM has updated with new logs
             setTimeout(() => {
-                logsEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                scrollToBottom();
             }, 100);
         }
     }, [logs, autoScroll]);
@@ -139,17 +177,19 @@ export function LogTerminal() {
                     <Button
                         variant="ghost"
                         size="icon"
-                        className="h-6 w-6 text-muted-foreground hover:text-foreground"
+                        className={cn("h-6 w-6 text-muted-foreground hover:text-foreground", autoScroll && "text-primary")}
                         onClick={() => {
-                            setAutoScroll(!autoScroll);
-                            // If enabling, immediately scroll
-                            if (!autoScroll && logsEndRef.current) {
-                                logsEndRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                            // If currently auto-scrolling, this pauses it.
+                            // If paused, this resumes it AND scrolls to bottom immediately.
+                            const newAutoScroll = !autoScroll;
+                            setAutoScroll(newAutoScroll);
+                            if (newAutoScroll) {
+                                setTimeout(() => scrollToBottom(), 0);
                             }
                         }}
                         title={autoScroll ? "Pause Scrolling" : "Resume Scrolling"}
                     >
-                        {autoScroll ? <Pause className="h-3 w-3" /> : <Play className="h-3 w-3" />}
+                        {autoScroll ? <Pause className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />}
                     </Button>
                     <Button
                         variant="ghost"
@@ -163,7 +203,7 @@ export function LogTerminal() {
                 </div>
             </CardHeader>
             <CardContent>
-                <ScrollArea className="h-[300px] w-full rounded-md border bg-black/90 p-4 font-mono text-xs">
+                <ScrollArea ref={scrollAreaRef} className="h-[300px] w-full rounded-md border bg-black/90 p-4 font-mono text-xs">
                     {logs.length === 0 ? (
                         <div className="flex h-full items-center justify-center text-muted-foreground/50">
                             Waiting for incoming logs...
@@ -191,8 +231,6 @@ export function LogTerminal() {
                                     </span>
                                 </div>
                             ))}
-                            {/* Dummy element for scrolling to bottom */}
-                            <div ref={logsEndRef} />
                         </div>
                     )}
                 </ScrollArea>
