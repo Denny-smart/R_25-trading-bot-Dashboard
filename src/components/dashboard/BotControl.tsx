@@ -194,7 +194,7 @@ export function BotControl({ status, hasApiKey, onStart, onStop, onRestart, onUp
             <Button variant="outline" onClick={() => setDialogOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={handleAction} disabled={isLoading !== null}>
+            <Button onClick={handleAction} disabled={isLoading !== null || (dialogAction === 'apikey' && !/^[a-zA-Z0-9]{15,}$/.test(apiKey))}>
               {isLoading !== null ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
