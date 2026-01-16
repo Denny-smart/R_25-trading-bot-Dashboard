@@ -13,6 +13,7 @@ export interface BackendSignal {
   };
   timestamp: string;
   can_trade: boolean;
+  result?: string;
 }
 
 export interface FrontendSignal {
@@ -89,8 +90,17 @@ export function transformSignal(backendSignal: BackendSignal, index: number): Fr
   // Action taken based on can_trade flag
   const actionTaken = backendSignal.can_trade ? 'Trade Executed' : 'Pending';
 
-  // Result - assume pending unless we have more info
-  const result = backendSignal.can_trade ? 'pending' : 'pending';
+  // Result - use backend result if available, otherwise default to pending
+  // Map common backend statuses to frontend display values if needed
+  let result = 'pending';
+  if (backendSignal.result) {
+    const rawResult = backendSignal.result.toLowerCase();
+    if (rawResult === 'won' || rawResult === 'win') result = 'Won';
+    else if (rawResult === 'lost' || rawResult === 'loss') result = 'Lost';
+    else result = backendSignal.result; // Fallback to raw value
+  } else if (!backendSignal.can_trade) {
+      result = 'Skipped';
+  }
 
   return {
     id: `${backendSignal.signal}-${index}-${backendSignal.timestamp}`,

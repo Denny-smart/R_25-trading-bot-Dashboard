@@ -149,9 +149,10 @@ export default function Monitoring() {
                             variant="outline"
                             className={cn(
                               'text-xs',
-                              signal.result === 'success' && 'border-success text-success',
-                              signal.result === 'failed' && 'border-destructive text-destructive',
-                              signal.result === 'pending' && 'border-warning text-warning'
+                              (signal.result === 'success' || signal.result === 'Won') && 'border-success text-success',
+                              (signal.result === 'failed' || signal.result === 'Lost') && 'border-destructive text-destructive',
+                              (signal.result === 'pending' || signal.result === 'Pending') && 'border-warning text-warning',
+                              signal.result === 'Skipped' && 'border-muted text-muted-foreground'
                             )}
                           >
                             {signal.result}
