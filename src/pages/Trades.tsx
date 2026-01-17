@@ -335,10 +335,7 @@ export default function Trades() {
                 <EmptyState
                   icon={History}
                   title="No Trade History"
-                  description={hasApiKey
-                    ? "Trade history will be available once trades are executed and closed."
-                    : "Configure the bot to start trading and generate history."
-                  }
+                  description="No past trades found for this account."
                   className="border-none bg-transparent"
                 />
               ) : (
