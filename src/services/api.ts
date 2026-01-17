@@ -14,7 +14,10 @@ apiClient.interceptors.request.use(async (config) => {
   const token = data.session?.access_token;
 
   if (token) {
+    console.log('Attaching Token to request:', config.url, 'Token length:', token.length);
     config.headers.Authorization = `Bearer ${token}`;
+  } else {
+    console.warn('No token found for request:', config.url);
   }
   return config;
 });
