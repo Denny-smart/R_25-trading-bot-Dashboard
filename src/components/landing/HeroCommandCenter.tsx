@@ -1,7 +1,7 @@
 import { useRef } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { ShieldCheck, ArrowRight, Activity, Lock } from "lucide-react";
+import { ShieldCheck, ArrowRight, Activity, Lock, AlertTriangle } from "lucide-react";
 import { motion } from "framer-motion";
 import {
   itemFadeIn,
@@ -65,13 +65,13 @@ export function HeroCommandCenter() {
           </motion.p>
 
           <motion.div
-            className="flex flex-col sm:flex-row items-center gap-4 pt-4 justify-center lg:justify-start"
+            className="flex flex-col items-center sm:items-start gap-6 pt-4"
             variants={itemFadeIn}
           >
             <Link to="/login" className="w-full sm:w-auto">
-              <Button size="lg" className="w-full sm:w-auto control-btn bg-primary text-primary-foreground hover:bg-primary/90 group group-hover:scale-[1.02] transition-transform">
-                <span className="relative z-10 flex items-center gap-2">
-                  <Lock className="w-4 h-4" />
+              <Button className="w-full sm:w-auto h-16 px-8 text-lg font-bold tracking-wide control-btn bg-primary text-primary-foreground hover:bg-primary/90 group group-hover:scale-[1.02] transition-all duration-300 shadow-[0_0_20px_rgba(0,255,157,0.3)]">
+                <span className="relative z-10 flex items-center gap-3">
+                  <Lock className="w-5 h-5" />
                   Validating Access Protocol...
                 </span>
                 {/* Button Scan Effect */}
@@ -82,6 +82,13 @@ export function HeroCommandCenter() {
                 />
               </Button>
             </Link>
+
+            <div className="flex items-center gap-3 text-muted-foreground bg-black/40 px-4 py-2 rounded border border-white/5">
+              <AlertTriangle className="w-4 h-4 text-amber-500" />
+              <span className="font-mono text-xs tracking-widest uppercase">
+                Access Restricted to Authorized Personnel
+              </span>
+            </div>
           </motion.div>
         </div>
 
