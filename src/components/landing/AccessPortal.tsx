@@ -102,7 +102,7 @@ export function AccessPortal({ onAuth, isLoading }: AccessPortalProps) {
                                 animate={{ opacity: [1, 0.5, 1] }}
                                 transition={{ duration: 0.5, repeat: Infinity }}
                             >
-                                VERIFYING...
+                                VALIDATING PROTOCOL...
                             </motion.span>
                         ) : scanState === 'denied' ? (
                             <span className="text-destructive">ACCESS DENIED</span>
@@ -133,7 +133,7 @@ export function AccessPortal({ onAuth, isLoading }: AccessPortalProps) {
                                 INITIALIZE_SEQUENCE
                             </>
                         )}
-                        {scanState === 'scanning' && "PROCESSING..."}
+                        {scanState === 'scanning' && "Validating Access Protocol..."}
                         {scanState === 'denied' && "RETRY_AUTH_SEQUENCE"}
                     </span>
 

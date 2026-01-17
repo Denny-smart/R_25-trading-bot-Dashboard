@@ -115,10 +115,10 @@ export function HeroCommandCenter() {
               />
 
               {/* Data Rows */}
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="space-y-2">
+              {['M1', 'M5', 'H1'].map((tf, i) => (
+                <div key={tf} className="space-y-2">
                   <div className="flex justify-between text-xs font-mono text-muted-foreground">
-                    <span>MODULE_0{i}</span>
+                    <span>TIMEFRAME {tf}</span>
                     <span className="text-primary">ACTIVE</span>
                   </div>
                   <div className="h-1 w-full bg-primary/10 rounded-full overflow-hidden">
