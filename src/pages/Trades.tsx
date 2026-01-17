@@ -51,8 +51,7 @@ export default function Trades() {
     fetchData();
     wsService.connect();
 
-    // Set up auto-refresh every 10 seconds as backup
-    const interval = setInterval(fetchData, 10000);
+
 
     wsService.on('new_trade', (data: any) => {
       const transformedTrade = transformTrades([data])[0];
@@ -77,7 +76,6 @@ export default function Trades() {
 
     return () => {
       wsService.disconnect();
-      clearInterval(interval);
     };
   }, []);
 
