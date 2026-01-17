@@ -138,11 +138,17 @@ export function BotControl({ status, hasApiKey, onStart, onStop, onRestart, onUp
         </div>
 
         {/* Control Buttons */}
+        {/* Control Buttons */}
         <div className="flex gap-3">
           <Button
             onClick={() => openDialog('start')}
             disabled={status === 'running' || isLoading !== null}
-            className="control-btn bg-success/10 hover:bg-success/20 text-success border border-success/20 hover:border-success/50"
+            className={cn(
+              "control-btn transition-all duration-300",
+              status === 'running'
+                ? "bg-success text-success-foreground border-success hover:bg-success disabled:opacity-100 shadow-[0_0_15px_rgba(0,255,157,0.3)]"
+                : "bg-success/10 hover:bg-success/20 text-success border border-success/20 hover:border-success/50"
+            )}
           >
             {isLoading === 'start' ? (
               <Loader2 className="w-4 h-4 animate-spin" />
@@ -157,7 +163,12 @@ export function BotControl({ status, hasApiKey, onStart, onStop, onRestart, onUp
           <Button
             onClick={() => openDialog('stop')}
             disabled={status === 'stopped' || isLoading !== null}
-            className="control-btn bg-destructive/10 hover:bg-destructive/20 text-destructive border border-destructive/20 hover:border-destructive/50"
+            className={cn(
+              "control-btn transition-all duration-300",
+              status === 'stopped'
+                ? "bg-destructive text-destructive-foreground border-destructive hover:bg-destructive disabled:opacity-100 shadow-[0_0_15px_rgba(255,0,0,0.3)]"
+                : "bg-destructive/10 hover:bg-destructive/20 text-destructive border border-destructive/20 hover:border-destructive/50"
+            )}
           >
             {isLoading === 'stop' ? (
               <Loader2 className="w-4 h-4 animate-spin" />
