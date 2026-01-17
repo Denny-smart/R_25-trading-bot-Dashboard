@@ -145,9 +145,9 @@ export function BotControl({ status, hasApiKey, onStart, onStop, onRestart, onUp
             disabled={status === 'running' || isLoading !== null}
             className={cn(
               "control-btn transition-all duration-300",
-              status === 'running'
-                ? "bg-success text-success-foreground border-success hover:bg-success disabled:opacity-100 shadow-[0_0_15px_rgba(0,255,157,0.3)]"
-                : "bg-success/10 hover:bg-success/20 text-success border border-success/20 hover:border-success/50"
+              status !== 'running'
+                ? "bg-success text-success-foreground border-success hover:bg-success hover:shadow-[0_0_20px_rgba(0,255,157,0.4)] shadow-[0_0_15px_rgba(0,255,157,0.3)]"
+                : "bg-muted/10 text-muted-foreground border-muted/20 hover:bg-muted/20"
             )}
           >
             {isLoading === 'start' ? (
@@ -162,12 +162,12 @@ export function BotControl({ status, hasApiKey, onStart, onStop, onRestart, onUp
 
           <Button
             onClick={() => openDialog('stop')}
-            disabled={status === 'stopped' || isLoading !== null}
+            disabled={status !== 'running' || isLoading !== null}
             className={cn(
               "control-btn transition-all duration-300",
-              status === 'stopped'
-                ? "bg-destructive text-destructive-foreground border-destructive hover:bg-destructive disabled:opacity-100 shadow-[0_0_15px_rgba(255,0,0,0.3)]"
-                : "bg-destructive/10 hover:bg-destructive/20 text-destructive border border-destructive/20 hover:border-destructive/50"
+              status === 'running'
+                ? "bg-destructive text-destructive-foreground border-destructive hover:bg-destructive hover:shadow-[0_0_20px_rgba(255,0,0,0.4)] shadow-[0_0_15px_rgba(255,0,0,0.3)]"
+                : "bg-muted/10 text-muted-foreground border-muted/20 hover:bg-muted/20"
             )}
           >
             {isLoading === 'stop' ? (
@@ -180,8 +180,13 @@ export function BotControl({ status, hasApiKey, onStart, onStop, onRestart, onUp
 
           <Button
             onClick={() => openDialog('restart')}
-            disabled={isLoading !== null}
-            className="control-btn bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 hover:border-primary/50"
+            disabled={status !== 'running' || isLoading !== null}
+            className={cn(
+              "control-btn transition-all duration-300",
+              status === 'running'
+                ? "bg-primary text-primary-foreground border-primary hover:bg-primary hover:shadow-[0_0_20px_rgba(0,123,255,0.4)] shadow-[0_0_15px_rgba(0,123,255,0.3)]"
+                : "bg-muted/10 text-muted-foreground border-muted/20 hover:bg-muted/20"
+            )}
           >
             {isLoading === 'restart' ? (
               <Loader2 className="w-4 h-4 animate-spin" />
