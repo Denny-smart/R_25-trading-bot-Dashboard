@@ -1,3 +1,4 @@
+import { supabase } from '@/integrations/supabase/client';
 type EventCallback = (data: unknown) => void;
 
 class WebSocketService {
@@ -7,8 +8,9 @@ class WebSocketService {
   private maxReconnectAttempts = 5;
   private reconnectDelay = 3000;
 
-  connect() {
-    const token = localStorage.getItem('access_token');
+  async connect() {
+    const { data } = await supabase.auth.getSession();
+    const token = data.session?.access_token;
     const WS_BASE = (import.meta.env.VITE_WS_URL as string) || 'wss://r-25v1.onrender.com';
     const wsUrl = token
       ? `${WS_BASE}/ws/live?token=${token}`
@@ -34,7 +36,7 @@ class WebSocketService {
     this.ws.onclose = () => {
       console.log('WebSocket disconnected');
       this.emit('disconnected', {});
-      
+
       if (this.reconnectAttempts < this.maxReconnectAttempts) {
         this.reconnectAttempts++;
         console.log(`Reconnecting... Attempt ${this.reconnectAttempts}`);

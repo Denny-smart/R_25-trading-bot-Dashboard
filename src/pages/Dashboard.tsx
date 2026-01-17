@@ -78,12 +78,14 @@ export default function Dashboard() {
     });
 
     wsService.on('new_trade', (data: any) => {
-      setTrades((prev) => [data, ...prev.slice(0, 9)]);
+      const transformedTrade = transformTrades([data])[0];
+      setTrades((prev) => [transformedTrade, ...prev.slice(0, 9)]);
     });
 
     wsService.on('trade_closed', (data: any) => {
+      const transformedTrade = transformTrades([data])[0];
       setTrades((prev) =>
-        prev.map((t) => (t.id === data.id ? { ...t, ...data } : t))
+        prev.map((t) => (t.id === transformedTrade.id ? { ...t, ...transformedTrade } : t))
       );
     });
 
