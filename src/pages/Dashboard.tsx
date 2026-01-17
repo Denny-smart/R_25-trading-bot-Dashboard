@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { StatsCard } from '@/components/dashboard/StatsCard';
 import { BotControl } from '@/components/dashboard/BotControl';
@@ -33,43 +33,84 @@ import {
   type FrontendBotStatus,
   type FrontendTradeStats
 } from '@/lib/dashboardTransformers';
-
-interface BotStatus {
-  status: 'running' | 'stopped';
-  uptime: number;
-  trades_today: number;
-  balance: number;
-  profit: number;
-  profit_percent: number;
-  active_positions: number;
-  win_rate: number;
-}
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 export default function Dashboard() {
-  const [botStatus, setBotStatus] = useState<FrontendBotStatus | null>(null);
-  const [trades, setTrades] = useState<FrontendTrade[]>([]);
-  const [profitData, setProfitData] = useState<{ time: string; profit: number }[]>([]);
-  const [tradeStats, setTradeStats] = useState<FrontendTradeStats | null>(null); // New state for overall stats
-  const [isLoading, setIsLoading] = useState(true);
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [refreshInterval, setRefreshInterval] = useState<NodeJS.Timeout | null>(null);
-  const [hasApiKey, setHasApiKey] = useState(false);
   const { role } = useAuth();
+  const queryClient = useQueryClient();
 
+  // 1. Fetch Config (Base requirement)
+  const { data: configData } = useQuery({
+    queryKey: ['config'],
+    queryFn: async () => {
+      const res = await api.config.current();
+      return res.data;
+    },
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
+
+  const hasApiKey = !!configData?.deriv_api_key && configData.deriv_api_key !== '';
+  const configStake = configData?.stake_amount;
+  const configStrategy = configData?.active_strategy;
+
+  // 2. Fetch Bot Status
+  const { data: botStatus, isLoading: isStatusLoading } = useQuery({
+    queryKey: ['botStatus'],
+    queryFn: async () => {
+      const res = await api.bot.status();
+      const transformed = transformBotStatus(res.data);
+      // Merge config fallbacks
+      if (!transformed.stake_amount && configStake) transformed.stake_amount = configStake;
+      if ((!transformed.active_strategy || transformed.active_strategy === 'Unknown') && configStrategy) {
+        transformed.active_strategy = configStrategy;
+      }
+      return transformed;
+    },
+    enabled: hasApiKey,
+    refetchInterval: 30000,
+  });
+
+  // 3. Fetch Trades
+  const { data: trades = [], isLoading: isTradesLoading } = useQuery({
+    queryKey: ['trades'],
+    queryFn: async () => {
+      const [active, history] = await Promise.all([
+        api.trades.active().catch(() => ({ data: [] })),
+        api.trades.history().catch(() => ({ data: [] }))
+      ]);
+      const activeTrades = transformTrades(active.data || []);
+      const historyTrades = transformTrades(history.data || []);
+
+      const tradeMap = new Map<string, FrontendTrade>();
+      historyTrades.forEach(t => tradeMap.set(t.id, t));
+      activeTrades.forEach(t => tradeMap.set(t.id, t));
+
+      return Array.from(tradeMap.values())
+        .sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime())
+        .slice(0, 50);
+    },
+    enabled: hasApiKey,
+    refetchInterval: 30000,
+  });
+
+  // 4. Fetch Stats
+  const { data: tradeStats } = useQuery({
+    queryKey: ['tradeStats'],
+    queryFn: async () => {
+      const res = await api.trades.stats();
+      return transformTradeStats(res.data);
+    },
+    enabled: hasApiKey,
+    refetchInterval: 1000 * 60 * 5, // 5 minutes
+  });
+
+  // WebSocket Integration
   useEffect(() => {
-    fetchData();
     wsService.connect();
 
-    // Set up auto-refresh every 10 seconds
-    const interval = setInterval(fetchData, 10000);
-    setRefreshInterval(interval);
-
-    // WebSocket listeners for real-time updates
     wsService.on('bot_status_update', (data: any) => {
-      setBotStatus((prev) => {
+      queryClient.setQueryData(['botStatus'], (prev: FrontendBotStatus | undefined) => {
         const newStatus = transformBotStatus(data);
-        // Preserve stake_amount if not present in update (assuming 0 means missing/default if we expect positive stake)
         if (newStatus.stake_amount === 0 && prev?.stake_amount) {
           newStatus.stake_amount = prev.stake_amount;
         }
@@ -79,159 +120,28 @@ export default function Dashboard() {
 
     wsService.on('new_trade', (data: any) => {
       const transformedTrade = transformTrades([data])[0];
-      setTrades((prev) => [transformedTrade, ...prev.slice(0, 9)]);
+      queryClient.setQueryData(['trades'], (prev: FrontendTrade[] | undefined) => {
+        const currentData = prev || [];
+        return [transformedTrade, ...currentData.slice(0, 49)];
+      });
     });
 
     wsService.on('trade_closed', (data: any) => {
       const transformedTrade = transformTrades([data])[0];
-      setTrades((prev) =>
-        prev.map((t) => (t.id === transformedTrade.id ? { ...t, ...transformedTrade } : t))
-      );
+      queryClient.setQueryData(['trades'], (prev: FrontendTrade[] | undefined) => {
+        return prev?.map((t) => (t.id === transformedTrade.id ? { ...t, ...transformedTrade } : t)) ?? [];
+      });
     });
 
     return () => {
       wsService.disconnect();
-      if (interval) clearInterval(interval);
     };
-  }, []);
-
-  const fetchData = async () => {
-    try {
-      if (!isLoading) setIsRefreshing(true);
-      setError(null);
-      console.log('=== DASHBOARD FETCH START ===');
-
-      // 1. Check for API key FIRST
-      const configRes = await api.config.current();
-      const hasKey = !!configRes.data?.deriv_api_key && configRes.data.deriv_api_key !== '';
-      setHasApiKey(hasKey);
-
-      // Capture config-level settings as fallback
-      const configStake = configRes.data?.stake_amount;
-      const configStrategy = configRes.data?.active_strategy;
-
-      if (!hasKey) {
-        // If no key, reset EVERYTHING to default/empty state
-        console.warn("No API key found. Resetting dashboard data.");
-        setBotStatus({
-          status: 'stopped',
-          active_strategy: 'Unknown',
-          stake_amount: 0,
-          uptime: 0,
-          trades_today: 0,
-          balance: 0,
-          profit: 0,
-          profit_percent: 0,
-          active_positions: 0,
-          win_rate: 0
-        });
-        setTrades([]);
-        setProfitData([]);
-        setTradeStats(null); // Reset stats too
-        setIsLoading(false);
-        return; // Stop here, do not fetch other data
-      }
-
-      // 2. Fetch all dashboard data (Only if key exists)
-      const statusRes = await api.bot.status();
-      const transformedStatus = transformBotStatus(statusRes.data);
-
-      // Merge config values if missing in status
-      if (!transformedStatus.stake_amount && configStake) {
-        transformedStatus.stake_amount = configStake;
-      }
-      if ((!transformedStatus.active_strategy || transformedStatus.active_strategy === 'Unknown') && configStrategy) {
-        transformedStatus.active_strategy = configStrategy;
-      }
-
-      console.log('Transformed Status:', transformedStatus);
-      setBotStatus(transformedStatus);
-
-      // Generate profit chart data based on actual profit
-      const chartData = generateProfitChartData(
-        transformedStatus.profit,
-        transformedStatus.trades_today
-      );
-      setProfitData(chartData);
-
-      // 3. Fetch trades (Merge Active + History)
-      try {
-        const [activeTradesRes, historyTradesRes] = await Promise.all([
-          api.trades.active().catch(() => ({ data: [] })),
-          api.trades.history().catch(() => ({ data: [] }))
-        ]);
-
-        console.log('Active Trades Response:', activeTradesRes.data);
-        const activeTrades = transformTrades(activeTradesRes.data || []);
-        const historyTrades = transformTrades(historyTradesRes.data || []);
-
-        // Merge and deduplicate: Active trades take precedence over History
-        const tradeMap = new Map<string, FrontendTrade>();
-
-        // Load history first
-        historyTrades.forEach(t => tradeMap.set(t.id, t));
-
-        // Overwrite with active status (if any)
-        activeTrades.forEach(t => tradeMap.set(t.id, t));
-
-        const mergedTrades = Array.from(tradeMap.values())
-          .sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime())
-          .slice(0, 50);
-
-        setTrades(mergedTrades);
-      } catch (tradeError) {
-        console.warn("Failed to fetch trades:", tradeError);
-      }
-
-      // 4. Fetch overall trade statistics
-      try {
-        const statsRes = await api.trades.stats();
-        console.log('Trade Stats Response:', statsRes.data);
-        const transformedStats = transformTradeStats(statsRes.data);
-        setTradeStats(transformedStats);
-      } catch (statsError) {
-        console.warn("Failed to fetch trade stats:", statsError);
-      }
-
-      console.log('=== DASHBOARD FETCH SUCCESS ===');
-    } catch (error: any) {
-      const errorMsg = error?.message || 'Unknown error occurred';
-      console.error('=== DASHBOARD FETCH ERROR ===');
-      console.error('Error:', error);
-
-      // If we know it's a 500 and no key is present (though we checked above), handle gracefully
-      if (error?.response?.status === 500) {
-        setError("Server returned an error. Please check your configuration.");
-
-        // Reset data just in case
-        setBotStatus({
-          status: 'stopped',
-          active_strategy: 'Unknown',
-          stake_amount: 0,
-          uptime: 0,
-          trades_today: 0,
-          balance: 0,
-          profit: 0,
-          profit_percent: 0,
-          active_positions: 0,
-          win_rate: 0
-        });
-        setTrades([]);
-        setProfitData([]);
-        setTradeStats(null);
-      } else {
-        setError(`${errorMsg}`);
-      }
-    } finally {
-      setIsLoading(false);
-      setIsRefreshing(false);
-    }
-  };
+  }, [queryClient]);
 
   const handleStart = async () => {
     try {
       await api.bot.start();
-      setBotStatus((prev) => prev && { ...prev, status: 'running' });
+      queryClient.setQueryData(['botStatus'], (prev: any) => prev && { ...prev, status: 'running' });
       toast({ title: 'Bot Started', description: 'Trading bot is now running.' });
     } catch (error: any) {
       toast({
@@ -245,7 +155,7 @@ export default function Dashboard() {
   const handleStop = async () => {
     try {
       await api.bot.stop();
-      setBotStatus((prev) => prev && { ...prev, status: 'stopped' });
+      queryClient.setQueryData(['botStatus'], (prev: any) => prev && { ...prev, status: 'stopped' });
       toast({ title: 'Bot Stopped', description: 'Trading bot has been stopped.' });
     } catch (error: any) {
       toast({
@@ -271,21 +181,10 @@ export default function Dashboard() {
 
   const handleUpdateApiKey = async (key: string) => {
     try {
-      // Fetch current config first to preserve other settings
       const currentConfigRes = await api.config.current();
-      const currentConfig = currentConfigRes.data || {};
-
-      // Update with new key
-      await api.config.update({
-        ...currentConfig,
-        deriv_api_key: key
-      });
-
-      toast({
-        title: 'API Key Updated',
-        description: 'Your Deriv API key has been securely saved.'
-      });
-      setHasApiKey(true);
+      await api.config.update({ ...currentConfigRes.data, deriv_api_key: key });
+      await queryClient.invalidateQueries({ queryKey: ['config'] });
+      toast({ title: 'API Key Updated', description: 'Your Deriv API key has been securely saved.' });
     } catch (error: any) {
       toast({
         title: 'Failed to update API Key',
@@ -293,6 +192,15 @@ export default function Dashboard() {
         variant: 'destructive',
       });
     }
+  };
+
+  const isLoading = isStatusLoading || isTradesLoading;
+
+  // Manual Refresh
+  const handleRefresh = () => {
+    queryClient.invalidateQueries({ queryKey: ['botStatus'] });
+    queryClient.invalidateQueries({ queryKey: ['trades'] });
+    queryClient.invalidateQueries({ queryKey: ['tradeStats'] });
   };
 
   if (isLoading) {
@@ -314,32 +222,28 @@ export default function Dashboard() {
     );
   }
 
-  // Calculate Balance Trend (Simulated using profit for today if history is missing)
+  // Calculate Balance Trend
   const balanceTrend = botStatus?.balance && botStatus.profit
     ? (botStatus.profit / (botStatus.balance - botStatus.profit)) * 100
     : 0;
+
+  const profitData = generateProfitChartData(botStatus?.profit || 0, botStatus?.trades_today || 0);
 
   return (
     <DashboardLayout title="Dashboard">
       <div className="space-y-6">
         <div className="flex justify-between items-start gap-4">
           <div className="flex-1">
-            {error && (
-              <div className="p-4 bg-destructive/10 border border-destructive rounded-lg">
-                <p className="text-destructive text-sm font-medium">Error: {error}</p>
-                <p className="text-destructive/70 text-xs mt-2">Open console (F12) to see detailed logs</p>
-              </div>
-            )}
+            {/* Error handling usually at query level now, but we can check isError */}
           </div>
           <Button
-            onClick={fetchData}
+            onClick={handleRefresh}
             variant="outline"
             size="sm"
             className="gap-2"
-            disabled={isRefreshing}
           >
-            <RefreshCw className={cn("w-4 h-4", isRefreshing && "animate-spin")} />
-            {isRefreshing ? 'Refreshing...' : 'Refresh'}
+            <RefreshCw className={cn("w-4 h-4", isStatusLoading && "animate-spin")} />
+            Refresh
           </Button>
         </div>
 
