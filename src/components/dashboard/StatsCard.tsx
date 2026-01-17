@@ -1,80 +1,83 @@
-import { LucideIcon } from 'lucide-react';
+import { ArrowDown, ArrowUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useEffect } from 'react';
+import { motion, useSpring, useTransform, useMotionValue } from 'framer-motion';
 
 interface StatsCardProps {
   title: string;
   value: string | number;
-  subtitle?: string;
-  icon: LucideIcon;
-  trend?: {
-    value: number;
-    label: string;
-  };
-  variant?: 'default' | 'success' | 'danger';
-  pulse?: boolean;
+  change?: string | number;
+  trend?: 'up' | 'down' | 'neutral';
+  icon?: React.ReactNode;
+  className?: string;
 }
 
-export function StatsCard({
-  title,
-  value,
-  subtitle,
-  icon: Icon,
-  trend,
-  variant = 'default',
-  pulse = false,
-}: StatsCardProps) {
+// Animated Counter Component
+function AnimatedCounter({ value }: { value: number }) {
+  const spring = useSpring(0, { mass: 0.8, stiffness: 75, damping: 15 });
+  const display = useTransform(spring, (current) =>
+    // Format based on magnitude (simple heuristic)
+    current.toLocaleString('en-US', {
+      minimumFractionDigits: Number.isInteger(value) ? 0 : 2,
+      maximumFractionDigits: 2
+    })
+  );
+
+  useEffect(() => {
+    spring.set(value);
+  }, [spring, value]);
+
+  return <motion.span>{display}</motion.span>;
+}
+
+export function StatsCard({ title, value, change, trend = 'neutral', icon, className }: StatsCardProps) {
+  // Determine if value is numeric for animation
+  const numericValue = typeof value === 'string' ? parseFloat(value.replace(/[^0-9.-]+/g, "")) : value;
+  const isNumeric = !isNaN(numericValue);
+
+  // Extract prefix/suffix if string
+  const prefix = typeof value === 'string' && value.includes('$') ? '$' : '';
+  const suffix = typeof value === 'string' && value.includes('%') ? '%' : '';
+
   return (
-    <div className="glass-card hover-lift hover-glow p-4 rounded-xl">
-      <div className="flex items-start justify-between">
-        <div className="flex-1">
-          <p className="text-sm font-medium text-muted-foreground">{title}</p>
-          <div className="flex items-center gap-2 mt-2">
-            {pulse && (
-              <span
-                className={cn(
-                  'status-indicator',
-                  variant === 'success' && 'status-running',
-                  variant === 'danger' && 'status-stopped'
-                )}
-              />
-            )}
-            <p
-              className={cn(
-                'text-2xl font-bold',
-                variant === 'success' && 'text-success',
-                variant === 'danger' && 'text-destructive',
-                variant === 'default' && 'text-foreground'
-              )}
-            >
-              {value}
-            </p>
+    <motion.div
+      whileHover={{ y: -2, transition: { duration: 0.2 } }}
+      className={cn("glass-card p-4 rounded-xl flex flex-col justify-between h-full group", className)}
+    >
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors">{title}</h3>
+        {icon && (
+          <div className="p-2 rounded-lg bg-primary/10 text-primary group-hover:bg-primary/20 transition-colors">
+            {icon}
           </div>
-          {subtitle && (
-            <p className="text-xs text-muted-foreground mt-1">{subtitle}</p>
-          )}
-          {trend && (
-            <p
-              className={cn(
-                'text-xs mt-2 font-medium',
-                trend.value >= 0 ? 'text-success' : 'text-destructive'
-              )}
-            >
-              {trend.value >= 0 ? '+' : ''}
-              {trend.value}% {trend.label}
-            </p>
-          )}
-        </div>
-        <div
-          className={cn(
-            'p-2.5 rounded-lg',
-            variant === 'success' && 'bg-success/20 text-success',
-            variant === 'danger' && 'bg-destructive/20 text-destructive',
-            variant === 'default' && 'bg-primary/20 text-primary'
-          )}
-        >
-          <Icon className="w-5 h-5" />
-        </div>
+        )}
       </div>
-    </div>
+
+      <div className="space-y-1">
+        <div className="text-2xl font-bold font-mono tracking-tight text-foreground flex items-baseline">
+          {prefix}
+          {isNumeric ? (
+            <AnimatedCounter value={numericValue} />
+          ) : (
+            value
+          )}
+          {suffix}
+        </div>
+
+        {change && (
+          <div className={cn(
+            "flex items-center text-xs font-medium",
+            trend === 'up' && "text-success",
+            trend === 'down' && "text-destructive",
+            trend === 'neutral' && "text-muted-foreground"
+          )}>
+            {trend === 'up' && <ArrowUp className="w-3 h-3 mr-1" />}
+            {trend === 'down' && <ArrowDown className="w-3 h-3 mr-1" />}
+            {change}
+            <span className="ml-1 text-muted-foreground opacity-60">vs last period</span>
+          </div>
+        )}
+      </div>
+    </motion.div>
   );
 }
