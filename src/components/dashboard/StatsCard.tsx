@@ -6,9 +6,12 @@ import { motion, useSpring, useTransform, useMotionValue } from 'framer-motion';
 interface StatsCardProps {
   title: string;
   value: string | number;
+  subtitle?: string;
   change?: string | number;
-  trend?: 'up' | 'down' | 'neutral';
-  icon?: React.ReactNode;
+  trend?: 'up' | 'down' | 'neutral' | { value: number; label: string };
+  variant?: 'success' | 'danger' | 'default';
+  pulse?: boolean;
+  icon?: React.ComponentType<{ className?: string }>;
   className?: string;
 }
 
@@ -30,7 +33,17 @@ function AnimatedCounter({ value }: { value: number }) {
   return <motion.span>{display}</motion.span>;
 }
 
-export function StatsCard({ title, value, change, trend = 'neutral', icon, className }: StatsCardProps) {
+export function StatsCard({
+  title,
+  value,
+  subtitle,
+  change,
+  trend = 'neutral',
+  variant = 'default',
+  pulse = false,
+  icon: IconComponent,
+  className
+}: StatsCardProps) {
   // Determine if value is numeric for animation
   const numericValue = typeof value === 'string' ? parseFloat(value.replace(/[^0-9.-]+/g, "")) : value;
   const isNumeric = !isNaN(numericValue);
@@ -39,16 +52,33 @@ export function StatsCard({ title, value, change, trend = 'neutral', icon, class
   const prefix = typeof value === 'string' && value.includes('$') ? '$' : '';
   const suffix = typeof value === 'string' && value.includes('%') ? '%' : '';
 
+  // Handle trend being an object or string
+  const trendDirection = typeof trend === 'object'
+    ? (trend.value > 0 ? 'up' : trend.value < 0 ? 'down' : 'neutral')
+    : trend;
+  const trendValue = typeof trend === 'object' ? trend.value : null;
+  const trendLabel = typeof trend === 'object' ? trend.label : null;
+
+  // Get variant color classes
+  const variantClasses = {
+    success: 'border-success/20 bg-success/5',
+    danger: 'border-destructive/20 bg-destructive/5',
+    default: ''
+  }[variant];
+
   return (
     <motion.div
       whileHover={{ y: -2, transition: { duration: 0.2 } }}
-      className={cn("glass-card p-4 rounded-xl flex flex-col justify-between h-full group", className)}
+      className={cn("glass-card p-4 rounded-xl flex flex-col justify-between h-full group border", variantClasses, className)}
     >
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors">{title}</h3>
-        {icon && (
-          <div className="p-2 rounded-lg bg-primary/10 text-primary group-hover:bg-primary/20 transition-colors">
-            {icon}
+        {IconComponent && (
+          <div className={cn(
+            "p-2 rounded-lg bg-primary/10 text-primary group-hover:bg-primary/20 transition-colors relative",
+            pulse && variant === 'success' && "animate-pulse"
+          )}>
+            <IconComponent className="w-4 h-4" />
           </div>
         )}
       </div>
@@ -64,17 +94,24 @@ export function StatsCard({ title, value, change, trend = 'neutral', icon, class
           {suffix}
         </div>
 
-        {change && (
+        {subtitle && (
+          <div className="text-xs text-muted-foreground">
+            {subtitle}
+          </div>
+        )}
+
+        {(change || trendValue !== null) && (
           <div className={cn(
             "flex items-center text-xs font-medium",
-            trend === 'up' && "text-success",
-            trend === 'down' && "text-destructive",
-            trend === 'neutral' && "text-muted-foreground"
+            trendDirection === 'up' && "text-success",
+            trendDirection === 'down' && "text-destructive",
+            trendDirection === 'neutral' && "text-muted-foreground"
           )}>
-            {trend === 'up' && <ArrowUp className="w-3 h-3 mr-1" />}
-            {trend === 'down' && <ArrowDown className="w-3 h-3 mr-1" />}
-            {change}
-            <span className="ml-1 text-muted-foreground opacity-60">vs last period</span>
+            {trendDirection === 'up' && <ArrowUp className="w-3 h-3 mr-1" />}
+            {trendDirection === 'down' && <ArrowDown className="w-3 h-3 mr-1" />}
+            {change || (trendValue !== null && `${trendValue > 0 ? '+' : ''}${trendValue.toFixed(1)}%`)}
+            {trendLabel && <span className="ml-1 text-muted-foreground opacity-60">{trendLabel}</span>}
+            {change && !trendLabel && <span className="ml-1 text-muted-foreground opacity-60">vs last period</span>}
           </div>
         )}
       </div>
