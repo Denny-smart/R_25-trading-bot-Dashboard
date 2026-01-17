@@ -167,7 +167,7 @@ export function LogTerminal() {
     const clearLogs = () => setLogs([]);
 
     return (
-        <Card className="col-span-full border-border/50 bg-background/50 backdrop-blur-sm">
+        <Card className="col-span-full glass-card border-white/10">
             <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
                 <CardTitle className="text-sm font-medium flex items-center gap-2">
                     <Terminal className="h-4 w-4" />

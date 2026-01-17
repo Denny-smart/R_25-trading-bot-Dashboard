@@ -42,7 +42,7 @@ export function Sidebar() {
   return (
     <aside
       className={cn(
-        'h-screen bg-sidebar border-r border-sidebar-border transition-all duration-300',
+        'h-screen bg-black/20 backdrop-blur-md border-r border-white/5 transition-all duration-300',
         collapsed ? 'w-20' : 'w-64'
       )}
     >
