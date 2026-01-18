@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Bot } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { Bot, ArrowLeft } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
 import { AccessPortal } from '@/components/landing/AccessPortal';
@@ -74,11 +75,59 @@ export default function Login() {
           <AccessPortal onAuth={handleGoogleSignIn} isLoading={isLoading} />
         </div>
 
-        <p className="text-center text-xs text-muted-foreground mt-8 font-mono">
-          <Link to="/" className="text-primary hover:text-white transition-colors hover:underline decoration-primary">
-            [ RETURN TO COMMAND ]
+        <div className="mt-12 w-full flex justify-center">
+          <Link to="/">
+            <motion.div
+              className="relative group px-6 py-2"
+              whileHover="hover"
+              initial="idle"
+            >
+              {/* Gooey Background Liquid */}
+              <motion.div
+                className="absolute inset-0 bg-primary/10 rounded-full blur-md"
+                variants={{
+                  idle: { scale: 0.8, opacity: 0 },
+                  hover: {
+                    scale: 1.2,
+                    opacity: 1,
+                    transition: { duration: 0.4, ease: "easeOut" }
+                  }
+                }}
+              />
+
+              {/* Content Container */}
+              <div className="relative flex items-center gap-3 text-primary/80 group-hover:text-primary transition-colors duration-300">
+                <motion.div
+                  variants={{
+                    idle: { x: 0 },
+                    hover: { x: -4 }
+                  }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                </motion.div>
+
+                <div className="flex flex-col items-start">
+                  <span className="text-xs font-mono tracking-widest uppercase">
+                    [ RETURN TO COMMAND ]
+                  </span>
+
+                  {/* Secondary Tooltip Text */}
+                  <motion.span
+                    className="text-[10px] text-primary/50 font-sans tracking-wide absolute top-full left-0 mt-1 whitespace-nowrap"
+                    variants={{
+                      idle: { opacity: 0, y: -5 },
+                      hover: { opacity: 1, y: 0 }
+                    }}
+                    transition={{ duration: 0.2, delay: 0.1 }}
+                  >
+                    Revert to Main Interface
+                  </motion.span>
+                </div>
+              </div>
+            </motion.div>
           </Link>
-        </p>
+        </div>
       </div>
     </div>
   );

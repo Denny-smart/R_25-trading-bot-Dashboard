@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Fingerprint, Scan, ShieldCheck, AlertCircle, Terminal } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Fingerprint, Scan, ShieldCheck, AlertCircle } from 'lucide-react';
 import { mechanicalTransition, attentionPulse } from '@/lib/animations';
 
 interface AccessPortalProps {
@@ -38,7 +37,7 @@ export function AccessPortal({ onAuth, isLoading }: AccessPortalProps) {
 
             {/* Content */}
             <div className="flex flex-col items-center text-center z-10 relative">
-                <div className="mb-6 relative h-24 flex items-center justify-center">
+                <div className="mb-6 relative h-40 w-40 flex items-center justify-center">
                     <AnimatePresence mode="wait">
                         {scanState === 'idle' && (
                             <motion.div
@@ -46,15 +45,45 @@ export function AccessPortal({ onAuth, isLoading }: AccessPortalProps) {
                                 initial={{ opacity: 0, scale: 0.9 }}
                                 animate={{ opacity: 1, scale: 1 }}
                                 exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.2 } }}
-                                className="w-20 h-20 rounded-full bg-primary/5 flex items-center justify-center border border-primary/30 text-primary relative group cursor-pointer"
+                                whileHover="hover"
+                                className="w-28 h-28 rounded-full bg-primary/5 flex items-center justify-center border border-primary/30 text-primary relative group cursor-pointer"
                                 onClick={!isLoading ? handleAccessRequest : undefined}
                             >
+                                {/* Ripple/Glow Effect */}
                                 <motion.div
-                                    className="absolute inset-0 rounded-full border border-primary/20"
-                                    animate={{ scale: [1, 1.1, 1], opacity: [0.5, 0, 0.5] }}
-                                    transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+                                    className="absolute inset-0 rounded-full border border-primary/50"
+                                    variants={{
+                                        hover: {
+                                            boxShadow: [
+                                                "0 0 0px rgba(0,240,255,0)",
+                                                "0 0 20px rgba(0,240,255,0.4)",
+                                                "0 0 0px rgba(0,240,255,0)"
+                                            ],
+                                            opacity: 1,
+                                        }
+                                    }}
+                                    transition={{ duration: 1.5, repeat: Infinity }}
                                 />
-                                <Fingerprint className="w-10 h-10 transition-transform group-hover:scale-110 duration-300" />
+
+                                {/* Orbiting ring for SERGE-style scan feel */}
+                                <motion.div
+                                    className="absolute inset-[-4px] rounded-full border-2 border-transparent border-t-primary/60 border-b-primary/60"
+                                    variants={{
+                                        hover: { rotate: 360, scale: 1.05 }
+                                    }}
+                                    transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                                />
+
+                                {/* Inner pulsing glow */}
+                                <motion.div
+                                    className="absolute inset-0 rounded-full bg-primary/10 blur-xl"
+                                    variants={{
+                                        hover: { opacity: [0.2, 0.6, 0.2] }
+                                    }}
+                                    transition={{ duration: 1.5, repeat: Infinity }}
+                                />
+
+                                <Fingerprint className="w-14 h-14 transition-all duration-300 group-hover:scale-110 group-hover:drop-shadow-[0_0_8px_rgba(0,240,255,0.8)]" />
                             </motion.div>
                         )}
 
@@ -64,10 +93,10 @@ export function AccessPortal({ onAuth, isLoading }: AccessPortalProps) {
                                 initial={{ opacity: 0 }}
                                 animate={{ opacity: 1 }}
                                 exit={{ opacity: 0 }}
-                                className="relative w-20 h-20 flex items-center justify-center"
+                                className="relative w-28 h-28 flex items-center justify-center"
                             >
                                 <motion.div
-                                    className="absolute inset-0 border-2 border-t-transparent border-primary rounded-full"
+                                    className="absolute inset-0 border-4 border-t-transparent border-primary rounded-full"
                                     animate={{ rotate: 360 }}
                                     transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
                                 />
@@ -76,26 +105,30 @@ export function AccessPortal({ onAuth, isLoading }: AccessPortalProps) {
                                     animate={{ rotate: -360 }}
                                     transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
                                 />
-                                <Scan className="w-8 h-8 text-primary animate-pulse" />
+                                <Scan className="w-10 h-10 text-primary animate-pulse" />
                             </motion.div>
                         )}
 
                         {scanState === 'denied' && (
-                            <motion.div
+                            <motion.button
                                 key="denied"
                                 variants={attentionPulse}
                                 initial="idle"
                                 animate="active"
-                                className="w-20 h-20 rounded-full bg-destructive/10 flex items-center justify-center border border-destructive text-destructive"
+                                onClick={() => setScanState('idle')}
+                                className="w-28 h-28 rounded-full bg-destructive/10 flex items-center justify-center border border-destructive text-destructive cursor-pointer hover:bg-destructive/20 transition-colors"
                             >
-                                <AlertCircle className="w-10 h-10" />
-                            </motion.div>
+                                <div className="flex flex-col items-center">
+                                    <AlertCircle className="w-10 h-10 mb-1" />
+                                    <span className="text-[10px] font-mono tracking-wider">RETRY</span>
+                                </div>
+                            </motion.button>
                         )}
                     </AnimatePresence>
                 </div>
 
                 {/* Terminal Status Text */}
-                <div className="h-16 mb-6 flex flex-col items-center justify-center">
+                <div className="h-16 mb-2 flex flex-col items-center justify-center">
                     <h2 className="text-xl font-bold text-white tracking-widest uppercase mb-1">
                         {scanState === 'scanning' ? (
                             <motion.span
@@ -107,7 +140,12 @@ export function AccessPortal({ onAuth, isLoading }: AccessPortalProps) {
                         ) : scanState === 'denied' ? (
                             <span className="text-destructive">ACCESS DENIED</span>
                         ) : (
-                            "SECURE ACCESS POINT"
+                            <motion.span
+                                animate={{ textShadow: ["0 0 5px rgba(0,240,255,0.5)", "0 0 15px rgba(0,240,255,0.2)", "0 0 5px rgba(0,240,255,0.5)"] }}
+                                transition={{ duration: 3, repeat: Infinity }}
+                            >
+                                SECURE ACCESS POINT
+                            </motion.span>
                         )}
                     </h2>
                     <p className="text-xs text-primary/60 font-mono">
@@ -115,38 +153,7 @@ export function AccessPortal({ onAuth, isLoading }: AccessPortalProps) {
                     </p>
                 </div>
 
-                <Button
-                    onClick={handleAccessRequest}
-                    disabled={isLoading || scanState === 'scanning'}
-                    className={`
-                        w-full h-14 text-sm font-mono tracking-wider rounded-none relative overflow-hidden transition-all duration-300 
-                        ${scanState === 'denied'
-                            ? 'bg-destructive/20 hover:bg-destructive/30 text-destructive border-destructive/50'
-                            : 'bg-primary/10 hover:bg-primary/20 text-primary border border-primary/30'
-                        }
-                    `}
-                >
-                    <span className="relative z-10 flex items-center justify-center gap-2">
-                        {scanState === 'idle' && (
-                            <>
-                                <Terminal className="w-4 h-4" />
-                                INITIALIZE_SEQUENCE
-                            </>
-                        )}
-                        {scanState === 'scanning' && "Validating Access Protocol..."}
-                        {scanState === 'denied' && "RETRY_AUTH_SEQUENCE"}
-                    </span>
-
-                    {/* Hover Scan Effect */}
-                    {scanState === 'idle' && (
-                        <motion.div
-                            className="absolute inset-0 bg-gradient-to-r from-transparent via-primary/20 to-transparent skew-x-12"
-                            initial={{ left: "-100%" }}
-                            whileHover={{ left: "200%" }}
-                            transition={{ duration: 0.5, ease: "easeInOut" }}
-                        />
-                    )}
-                </Button>
+                <div className="h-4" /> {/* Spacer replacement for button */}
 
                 <div className="mt-6 flex flex-col gap-1 text-[10px] text-muted-foreground font-mono uppercase w-full">
                     <div className="flex justify-between w-full border-t border-white/5 pt-2">
