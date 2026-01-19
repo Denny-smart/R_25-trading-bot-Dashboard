@@ -120,7 +120,7 @@ export function HeroCommandCenter() {
                 </div>
               </div>
               <span className="font-mono text-sm tracking-[0.2em] text-primary group-hover:text-white transition-colors uppercase font-bold">
-                Watch System Demo
+                Watch why MaliBot Exists
               </span>
             </div>
 
