@@ -188,9 +188,10 @@ export function HeroCommandCenter() {
               <iframe
                 width="100%"
                 height="100%"
-                src="https://www.youtube.com/embed/13TMtT3WZw0?autoplay=1"
+                src="https://www.youtube.com/embed/13TMtT3WZw0?si=7iV0huyxgh8Xjwtl&autoplay=1"
                 title="How MaliBot Works"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                referrerPolicy="strict-origin-when-cross-origin"
                 allowFullScreen
                 className="w-full h-full"
               />
