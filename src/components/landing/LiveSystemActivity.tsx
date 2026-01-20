@@ -50,7 +50,7 @@ export function LiveSystemActivity() {
                     Transparency is Key.
                     <br />
                     <span className="text-muted-foreground text-xl md:text-2xl font-normal mt-2 block">
-                        “The system does not trade all the time. It waits for the right moment.”
+                        “Clear signals. Clear reasons. Clear results.”
                     </span>
                 </h2>
 
