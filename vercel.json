@@ -1,10 +1,6 @@
 {
   "rewrites": [
     {
-      "source": "/api/:match*",
-      "destination": "https://r-25v1.onrender.com/api/:match*"
-    },
-    {
       "source": "/supabase/:match*",
       "destination": "https://iklmmlduynnnaejxkhhx.supabase.co/:match*"
     },

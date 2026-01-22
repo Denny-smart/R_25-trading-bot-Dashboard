@@ -11,7 +11,13 @@ class WebSocketService {
   async connect() {
     const { data } = await supabase.auth.getSession();
     const token = data.session?.access_token;
-    const WS_BASE = (import.meta.env.VITE_WS_URL as string) || 'wss://r-25v1.onrender.com';
+    const WS_BASE = import.meta.env.VITE_WS_URL as string;
+    
+    if (!WS_BASE) {
+      console.error('VITE_WS_URL environment variable is not set');
+      throw new Error('WebSocket URL not configured. Please set VITE_WS_URL environment variable.');
+    }
+    
     const wsUrl = token
       ? `${WS_BASE}/ws/live?token=${token}`
       : `${WS_BASE}/ws/live`;
