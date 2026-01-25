@@ -32,7 +32,29 @@ export const formatDuration = (seconds: number): string => {
 };
 
 export const formatDate = (date: string | Date): string => {
-  // Handle format "YYYY-MM-DD HH:MM:SS" directly
+  // Handle PostgreSQL format with timezone: "YYYY-MM-DD HH:MM:SS+00" or "YYYY-MM-DD HH:MM:SS+00:00"
+  if (typeof date === 'string' && date.match(/^\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2}[+-]\d{2}(:\d{2})?$/)) {
+    // PostgreSQL format with timezone - convert to ISO 8601
+    // Replace space with T and ensure proper timezone format
+    let isoString = date.replace(' ', 'T');
+    // If timezone is just +00 or -05, convert to +00:00 format
+    if (isoString.match(/[+-]\d{2}$/)) {
+      isoString += ':00';
+    }
+    const parsed = new Date(isoString);
+    if (!isNaN(parsed.getTime())) {
+      return parsed.toLocaleString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: true,
+      });
+    }
+  }
+  // Handle format "YYYY-MM-DD HH:MM:SS" directly (without timezone)
   if (typeof date === 'string' && date.match(/^\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2}$/)) {
     // Replace space with T to make it ISO 8601 compatible
     const isoString = date.replace(' ', 'T');
@@ -84,6 +106,22 @@ export const formatNumber = (num: number): string => {
 };
 
 export const formatTime = (date: string | Date): string => {
+  // Handle PostgreSQL format with timezone: "YYYY-MM-DD HH:MM:SS+00" or "YYYY-MM-DD HH:MM:SS+00:00"
+  if (typeof date === 'string' && date.match(/^\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2}[+-]\d{2}(:\d{2})?$/)) {
+    let isoString = date.replace(' ', 'T');
+    if (isoString.match(/[+-]\d{2}$/)) {
+      isoString += ':00';
+    }
+    const parsed = new Date(isoString);
+    if (!isNaN(parsed.getTime())) {
+      return parsed.toLocaleTimeString('en-US', {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: true,
+      });
+    }
+  }
   // Handle format "YYYY-MM-DD HH:MM:SS" directly
   if (typeof date === 'string' && date.match(/^\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2}$/)) {
     const isoString = date.replace(' ', 'T');

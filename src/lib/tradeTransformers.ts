@@ -130,9 +130,9 @@ export function transformTrade(backendTrade: BackendTrade | any, index: number =
     entry_price: Number(backendTrade.entry_price) || undefined,
     exit_price: backendTrade.exit_price ? Number(backendTrade.exit_price) : undefined,
     stake: Number(backendTrade.stake) || undefined,
-    profit: backendTrade.pnl !== null && backendTrade.pnl !== undefined ? Number(backendTrade.pnl) : undefined,
+    profit: backendTrade.pnl !== null && backendTrade.pnl !== undefined ? Number(backendTrade.pnl) : (backendTrade.profit !== null && backendTrade.profit !== undefined ? Number(backendTrade.profit) : undefined),
     profit_percent: backendTrade.pnl ? (Number(backendTrade.pnl) / Number(backendTrade.stake)) * 100 : undefined,
-    duration: undefined,
+    duration: backendTrade.duration !== null && backendTrade.duration !== undefined ? Number(backendTrade.duration) : undefined,
     status,
   };
 
