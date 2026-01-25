@@ -105,7 +105,7 @@ export default function Monitoring() {
 
             <div className="flex-1 min-h-0 relative rounded-lg border border-white/5 bg-white/5 overflow-hidden flex flex-col">
               {/* Table Header */}
-              <div className="grid grid-cols-6 gap-4 p-4 border-b border-white/5 bg-white/5 text-xs font-medium text-muted-foreground uppercase tracking-wider">
+              <div className="hidden md:grid grid-cols-6 gap-4 p-4 border-b border-white/5 bg-white/5 text-xs font-medium text-muted-foreground uppercase tracking-wider">
                 <div>Time</div>
                 <div>Signal Type</div>
                 <div>Confidence</div>
@@ -129,18 +129,36 @@ export default function Monitoring() {
                 ) : (
                   <div className="divide-y divide-white/5">
                     {signals.map((signal) => (
-                      <div key={signal.id} className="grid grid-cols-6 gap-4 p-4 text-sm hover:bg-white/5 transition-colors items-center group">
-                        <div className="font-mono text-muted-foreground text-xs">
-                          {formatDate(signal.timestamp)}
-                        </div>
-                        <div>
-                          <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20 hover:bg-primary/20">
-                            {signal.signal_type}
-                          </Badge>
-                        </div>
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <div className="flex-1 h-1.5 bg-white/10 rounded-full overflow-hidden w-24">
+                      <div key={signal.id} className="group hover:bg-white/5 transition-colors">
+                        {/* Mobile View */}
+                        <div className="p-4 space-y-3 md:hidden">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <span className="font-mono text-xs text-muted-foreground">{formatDate(signal.timestamp)}</span>
+                              <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20 text-[10px] px-1.5 h-5">
+                                {signal.signal_type}
+                              </Badge>
+                            </div>
+                            <Badge
+                              variant="outline"
+                              className={cn(
+                                'text-[10px] px-2 py-0.5 border-0 font-medium',
+                                (signal.result === 'success' || signal.result === 'Won') && 'bg-success/10 text-success',
+                                (signal.result === 'failed' || signal.result === 'Lost') && 'bg-destructive/10 text-destructive',
+                                (signal.result === 'pending' || signal.result === 'Pending') && 'bg-warning/10 text-warning',
+                                signal.result === 'Skipped' && 'bg-muted text-muted-foreground opacity-70'
+                              )}
+                            >
+                              {signal.result.toUpperCase()}
+                            </Badge>
+                          </div>
+
+                          <div className="space-y-1.5">
+                            <div className="flex items-center justify-between text-xs">
+                              <span className="text-muted-foreground">Confidence</span>
+                              <span className="font-mono">{signal.confidence}%</span>
+                            </div>
+                            <div className="h-1.5 bg-white/10 rounded-full overflow-hidden w-full">
                               <div
                                 className={cn(
                                   "h-full rounded-full",
@@ -150,28 +168,65 @@ export default function Monitoring() {
                                 style={{ width: `${signal.confidence}%` }}
                               />
                             </div>
-                            <span className="text-xs font-mono">{signal.confidence}%</span>
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-4 text-xs">
+                            <div>
+                              <span className="text-muted-foreground block mb-1 uppercase tracking-wider text-[10px]">Market</span>
+                              <span className="text-foreground">{signal.market_conditions}</span>
+                            </div>
+                            <div>
+                              <span className="text-muted-foreground block mb-1 uppercase tracking-wider text-[10px]">Action</span>
+                              <div className="font-medium text-foreground">{signal.action_taken}</div>
+                            </div>
                           </div>
                         </div>
-                        <div className="text-muted-foreground">
-                          {signal.market_conditions}
-                        </div>
-                        <div className="font-medium text-foreground">
-                          {signal.action_taken}
-                        </div>
-                        <div className="text-right">
-                          <Badge
-                            variant="outline"
-                            className={cn(
-                              'text-[10px] px-2 py-0.5 border-0 font-medium',
-                              (signal.result === 'success' || signal.result === 'Won') && 'bg-success/10 text-success',
-                              (signal.result === 'failed' || signal.result === 'Lost') && 'bg-destructive/10 text-destructive',
-                              (signal.result === 'pending' || signal.result === 'Pending') && 'bg-warning/10 text-warning',
-                              signal.result === 'Skipped' && 'bg-muted text-muted-foreground opacity-70'
-                            )}
-                          >
-                            {signal.result.toUpperCase()}
-                          </Badge>
+
+                        {/* Desktop View */}
+                        <div className="hidden md:grid grid-cols-6 gap-4 p-4 text-sm items-center">
+                          <div className="font-mono text-muted-foreground text-xs">
+                            {formatDate(signal.timestamp)}
+                          </div>
+                          <div>
+                            <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20 hover:bg-primary/20">
+                              {signal.signal_type}
+                            </Badge>
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <div className="flex-1 h-1.5 bg-white/10 rounded-full overflow-hidden w-24">
+                                <div
+                                  className={cn(
+                                    "h-full rounded-full",
+                                    signal.confidence >= 70 ? "bg-success" :
+                                      signal.confidence >= 40 ? "bg-warning" : "bg-destructive"
+                                  )}
+                                  style={{ width: `${signal.confidence}%` }}
+                                />
+                              </div>
+                              <span className="text-xs font-mono">{signal.confidence}%</span>
+                            </div>
+                          </div>
+                          <div className="text-muted-foreground">
+                            {signal.market_conditions}
+                          </div>
+                          <div className="font-medium text-foreground">
+                            {signal.action_taken}
+                          </div>
+                          <div className="text-right">
+                            <Badge
+                              variant="outline"
+                              className={cn(
+                                'text-[10px] px-2 py-0.5 border-0 font-medium',
+                                (signal.result === 'success' || signal.result === 'Won') && 'bg-success/10 text-success',
+                                (signal.result === 'failed' || signal.result === 'Lost') && 'bg-destructive/10 text-destructive',
+                                (signal.result === 'pending' || signal.result === 'Pending') && 'bg-warning/10 text-warning',
+                                signal.result === 'Skipped' && 'bg-muted text-muted-foreground opacity-70'
+                              )}
+                            >
+                              {signal.result.toUpperCase()}
+                            </Badge>
+                          </div>
                         </div>
                       </div>
                     ))}
