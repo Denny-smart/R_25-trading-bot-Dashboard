@@ -87,18 +87,40 @@ export const formatDate = (date: string | Date): string => {
 };
 
 export const formatTimeAgo = (date: string | Date): string => {
+  let parsed: Date;
+
+  // Handle PostgreSQL format with timezone: "YYYY-MM-DD HH:MM:SS+00" or "YYYY-MM-DD HH:MM:SS+00:00"
+  if (typeof date === 'string' && date.match(/^\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2}[+-]\d{2}(:\d{2})?$/)) {
+    let isoString = date.replace(' ', 'T');
+    if (isoString.match(/[+-]\d{2}$/)) {
+      isoString += ':00';
+    }
+    parsed = new Date(isoString);
+  }
+  // Handle format "YYYY-MM-DD HH:MM:SS" directly
+  else if (typeof date === 'string' && date.match(/^\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2}$/)) {
+    const isoString = date.replace(' ', 'T');
+    parsed = new Date(isoString);
+  } else {
+    parsed = new Date(date);
+  }
+
+  if (isNaN(parsed.getTime())) {
+    return 'Invalid Date';
+  }
+
   const now = new Date();
-  const past = new Date(date);
-  const diffMs = now.getTime() - past.getTime();
+  const diffMs = now.getTime() - parsed.getTime();
   const diffSecs = Math.floor(diffMs / 1000);
   const diffMins = Math.floor(diffSecs / 60);
   const diffHours = Math.floor(diffMins / 60);
   const diffDays = Math.floor(diffHours / 24);
 
-  if (diffSecs < 60) return 'Just now';
-  if (diffMins < 60) return `${diffMins}M ago`;
-  if (diffHours < 24) return `${diffHours}H ago`;
-  return `${diffDays}D ago`;
+  if (diffSecs < 10) return 'Just now'; // Reduced from 60s to 10s to show seconds for recent trades
+  if (diffSecs < 60) return `${diffSecs}s ago`;
+  if (diffMins < 60) return `${diffMins}m ago`;
+  if (diffHours < 24) return `${diffHours}h ago`;
+  return `${diffDays}d ago`;
 };
 
 export const formatNumber = (num: number): string => {
