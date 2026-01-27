@@ -58,7 +58,8 @@ VITE_SUPABASE_URL=your_supabase_project_url
 VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
 
 # Backend API Configuration
-VITE_API_BASE_URL=https://r-25v1.onrender.com
+VITE_API_BASE_URL=backend url
+VITE_WS_URL=wss backend url
 ```
 
 **Important:** Never commit `.env.local` to version control. It's already included in `.gitignore`.
