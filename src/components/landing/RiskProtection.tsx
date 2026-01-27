@@ -3,7 +3,7 @@ import { Lock, Scan, FastForward, StopCircle, Check } from 'lucide-react';
 
 const features = [
     {
-        title: "Safety First — “Global Lock”",
+        title: "Safety First: Global Lock Protocol",
         icon: Lock,
         description: "One trade at a time. No over-trading. This prevents losses from stacking up and protects your balance.",
         quote: "“Focused decisions. Better protection.”"
@@ -15,7 +15,7 @@ const features = [
         quote: "“Trades only when conditions are clear.”"
     },
     {
-        title: "Fast Exit Rule (Scalping Mode)",
+        title: "Fast Exit Rule: Scalping Precision",
         icon: FastForward,
         description: "If a trade doesn’t move into profit quickly, the bot closes it early. Small losses stay small.",
         quote: "“No holding bad trades.”"
