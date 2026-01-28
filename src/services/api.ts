@@ -49,6 +49,7 @@ export const api = {
     active: () => apiClient.get('/api/v1/trades/active'),
     history: (params?: Record<string, unknown>) => apiClient.get('/api/v1/trades/history', { params }),
     stats: () => apiClient.get('/api/v1/trades/stats'),
+    statsDebug: () => apiClient.get('/api/v1/trades/stats/debug'),
   },
   monitor: {
     signals: () => apiClient.get('/api/v1/monitor/signals'),
