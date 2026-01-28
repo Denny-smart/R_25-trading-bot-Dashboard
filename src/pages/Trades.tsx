@@ -106,7 +106,11 @@ export default function Trades() {
       setHistoryTrades(historyTradesData);
       setStats(statsData);
     } catch (error) {
-      console.error('Failed to fetch trades:', error);
+      console.error('Failed to fetch trades:', {
+        error,
+        message: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+      });
     } finally {
       setIsLoading(false);
     }

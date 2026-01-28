@@ -30,10 +30,27 @@ class WebSocketService {
 
     this.ws.onmessage = (event) => {
       try {
+        // Validate message is a string
+        if (typeof event.data !== 'string') {
+          console.warn('Received non-string WebSocket message:', event.data);
+          return;
+        }
+
         const data = JSON.parse(event.data);
+
+        // Validate message has required type field
+        if (!data.type) {
+          console.warn('WebSocket message missing type field:', data);
+          return;
+        }
+
         this.emit(data.type, data);
       } catch (e) {
-        console.error('Failed to parse WebSocket message:', e);
+        console.error('Failed to parse WebSocket message:', {
+          error: e,
+          rawData: event.data,
+          dataType: typeof event.data
+        });
       }
     };
 
