@@ -22,6 +22,10 @@
           "value": "max-age=63072000; includeSubDomains; preload"
         },
         {
+          "key": "Permissions-Policy",
+          "value": "unload=*"
+        },
+        {
           "key": "X-Frame-Options",
           "value": "DENY"
         },
