@@ -106,9 +106,9 @@ export default function Dashboard() {
 
   // WebSocket Integration
   useEffect(() => {
-    wsService.connect();
+    // Connection is now managed by NotificationContext/Global
 
-    wsService.on('bot_status_update', (data: any) => {
+    const handleBotStatus = (data: any) => {
       queryClient.setQueryData(['botStatus'], (prev: FrontendBotStatus | undefined) => {
         const newStatus = transformBotStatus(data);
         if (newStatus.stake_amount === 0 && prev?.stake_amount) {
@@ -116,17 +116,17 @@ export default function Dashboard() {
         }
         return prev ? { ...prev, ...newStatus } : newStatus;
       });
-    });
+    };
 
-    wsService.on('new_trade', (data: any) => {
+    const handleNewTrade = (data: any) => {
       const transformedTrade = transformTrades([data])[0];
       queryClient.setQueryData(['trades'], (prev: FrontendTrade[] | undefined) => {
         const currentData = prev || [];
         return [transformedTrade, ...currentData.slice(0, 49)];
       });
-    });
+    };
 
-    wsService.on('trade_closed', (data: any) => {
+    const handleTradeClosed = (data: any) => {
       const transformedTrade = transformTrades([data])[0];
 
       // Update trades list
@@ -146,10 +146,16 @@ export default function Dashboard() {
           profit: prev.profit + tradeProfit
         };
       });
-    });
+    };
+
+    wsService.on('bot_status_update', handleBotStatus);
+    wsService.on('new_trade', handleNewTrade);
+    wsService.on('trade_closed', handleTradeClosed);
 
     return () => {
-      wsService.disconnect();
+      wsService.off('bot_status_update', handleBotStatus);
+      wsService.off('new_trade', handleNewTrade);
+      wsService.off('trade_closed', handleTradeClosed);
     };
   }, [queryClient]);
 

@@ -49,16 +49,14 @@ export default function Trades() {
 
   useEffect(() => {
     fetchData();
-    wsService.connect();
+    // Connection managed by Global Context
 
-
-
-    wsService.on('new_trade', (data: any) => {
+    const handleNewTrade = (data: any) => {
       const transformedTrade = transformTrades([data])[0];
       setActiveTrades((prev) => [transformedTrade, ...prev]);
-    });
+    };
 
-    wsService.on('trade_closed', (data: any) => {
+    const handleTradeClosed = (data: any) => {
       // Move from active to history or just update status
       // Best approach: Re-fetch active/history or handle optimistic update
       // Given complexity of moving between lists, re-fetch is safest for consistency, 
@@ -72,10 +70,14 @@ export default function Trades() {
       // Also update stats if we can, but stats calculation is complex. 
       // Simpler for now to just re-fetch data on close to keep everything perfectly synced including stats.
       fetchData();
-    });
+    };
+
+    wsService.on('new_trade', handleNewTrade);
+    wsService.on('trade_closed', handleTradeClosed);
 
     return () => {
-      wsService.disconnect();
+      wsService.off('new_trade', handleNewTrade);
+      wsService.off('trade_closed', handleTradeClosed);
     };
   }, []);
 

@@ -4,6 +4,7 @@ import { useAuth } from './AuthContext';
 import { wsService } from '@/services/websocket';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
+import { formatCurrency } from '@/lib/formatters';
 
 export interface AppNotification {
     id: string;
@@ -64,6 +65,10 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
 
     // Subscribe to WebSocket events (Trade Signals & Results) - Visible to ALL users
     useEffect(() => {
+        if (user) {
+            wsService.connect();
+        }
+
         const handleNewTrade = (data: any) => {
             addNotification({
                 title: 'New Trade Signal',
@@ -73,10 +78,11 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
         };
 
         const handleTradeClosed = (data: any) => {
-            const isWin = data.profit > 0;
+            const isWin = Number(data.profit) > 0;
+            const formattedProfit = formatCurrency(Number(data.profit));
             addNotification({
                 title: isWin ? 'Trade Won' : 'Trade Lost',
-                message: `${data.symbol} closed. Profit: ${data.profit}`,
+                message: `${data.symbol} closed. Profit: ${formattedProfit}`,
                 type: isWin ? 'success' : 'error',
             });
         };
@@ -87,8 +93,26 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
         return () => {
             wsService.off('new_trade', handleNewTrade);
             wsService.off('trade_closed', handleTradeClosed);
+            // We do not disconnect here because other components might use it?
+            // Actually, if this unmounts (App unmounts, or AuthProvider unmounts), we should disconnect.
+            // But if we navigate, NotificationProvider stays mounted.
+            // So we only disconnect when user logs out or app closes.
+            // Since we call connect() on [user], if user becomes null, we should probably disconnect.
+            // But let's leave disconnect explicit for now or cleaner:
+            // If we move connection here, we should be responsible for it.
+            // But to avoid disrupting other components if they expected to use it...
+            // Actually, with my change to websocket.ts, connect() is safe.
+            // So calling it here is safe.
+            // Disconnecting on unmount of NotificationProvider is also safe (App close).
         };
-    }, [addNotification]);
+    }, [user, addNotification]);
+
+    // Effect to handle disconnection on logout/user change
+    useEffect(() => {
+        if (!user) {
+            wsService.disconnect();
+        }
+    }, [user]);
 
     // Subscribe to New User Signups - Visible ONLY to Admins
     useEffect(() => {

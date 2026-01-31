@@ -23,7 +23,17 @@ class WebSocketService {
       throw new Error('WebSocket URL not configured. Please set VITE_WS_URL environment variable.');
     }
 
+    if (this.ws && (this.ws.readyState === WebSocket.OPEN || this.ws.readyState === WebSocket.CONNECTING)) {
+      console.log('WebSocket already connected or connecting');
+      return;
+    }
+
     const wsUrl = `${WS_BASE}/ws/live`;
+
+    // Close existing connection if any (e.g. closing or closed state but not null)
+    if (this.ws) {
+      this.ws.close();
+    }
 
     this.ws = token ? new WebSocket(wsUrl, [token]) : new WebSocket(wsUrl);
 

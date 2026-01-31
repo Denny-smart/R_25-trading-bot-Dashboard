@@ -80,7 +80,7 @@ export default function Logs() {
     fetchLogs();
 
     // WebSocket listener for real-time logs
-    wsService.on('log', (data: any) => {
+    const handleLog = (data: any) => {
       if (data && data.message) {
         setLogs((prev) => {
           const newLog = parseLogString(data.message, prev.length);
@@ -89,10 +89,12 @@ export default function Logs() {
           return [...prev, newLog].slice(-500);
         });
       }
-    });
+    };
+
+    wsService.on('log', handleLog);
 
     return () => {
-      wsService.off('log', () => { });
+      wsService.off('log', handleLog);
     };
   }, []);
 
