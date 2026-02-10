@@ -78,8 +78,11 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
         };
 
         const handleTradeClosed = (data: any) => {
-            const isWin = Number(data.profit) > 0;
-            const formattedProfit = formatCurrency(Number(data.profit));
+            // Backend sends 'pnl' field, fall back to 'profit' for backward compatibility
+            const profitValue = data.pnl !== null && data.pnl !== undefined ? Number(data.pnl) : 
+                               (data.profit !== null && data.profit !== undefined ? Number(data.profit) : 0);
+            const isWin = profitValue > 0;
+            const formattedProfit = formatCurrency(profitValue);
             addNotification({
                 title: isWin ? 'Trade Won' : 'Trade Lost',
                 message: `${data.symbol} closed. Profit: ${formattedProfit}`,
